@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:ns1="urn:oasis:names:tc:xliff:document:1.2">
-    <string msgid="9020470552698189270" name="autofill">"ଅଟୋଫିଲ"</string>
+    <string msgid="1150566100598813236" name="androidx_compose_ui_autofill">"ଅଟୋଫିଲ"</string>
     <string msgid="881409763997275156" name="call_notification_answer_action">"ଉତ୍ତର ଦିଅନ୍ତୁ"</string>
     <string msgid="8793775615905189152" name="call_notification_answer_video_action">"ଭିଡିଓ"</string>
     <string msgid="3229508546291798546" name="call_notification_decline_action">"ଅଗ୍ରାହ୍ୟ କର"</string>

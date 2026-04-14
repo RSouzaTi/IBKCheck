@@ -45,6 +45,13 @@
             android:exported="true"
             android:theme="@android:style/Theme.Material.Light.NoActionBar" />
 
+        <uses-library
+            android:name="androidx.window.extensions"
+            android:required="false" />
+        <uses-library
+            android:name="androidx.window.sidecar"
+            android:required="false" />
+
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="br.com.ibk.check.androidx-startup"

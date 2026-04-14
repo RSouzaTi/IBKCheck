@@ -80,7 +80,7 @@ fun MainScreen() {
             Estufa("1", "Estufa ES01"), Estufa("2", "Estufa ES02"),
             Estufa("3", "Estufa ES03"), Estufa("4", "Estufa ES04"),
             Estufa("5", "Estufa ES05"), Estufa("6", "Estufa ES06"),
-            Estufa("7", "Estufa ES07", unidadePressao = "MPa"),
+            Estufa("7", "Estufa ES07"),
             Estufa("8", "Estufa ES08", unidadePressao = "MPa"),
             Estufa("9", "Estufa ES09"), Estufa("10", "Estufa ES10"),
             Estufa("11", "Estufa ES11"), Estufa("12", "Estufa ES12"),
