@@ -4,7 +4,9 @@ package br.com.ibk.check.model
 data class Leitura(
     val horario: String,
     val temperatura: String = "",
-    val pressao: String = ""
+    val pressao: String = "",
+    val temUmidade: Boolean = true,
+    val temTempo: Boolean = true
 )
 
 // Modelo da Estufa atualizado
