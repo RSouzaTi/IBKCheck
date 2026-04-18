@@ -28,6 +28,7 @@ import java.util.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen() {
@@ -40,7 +41,6 @@ fun MainScreen() {
     val leiturasEstufas = remember { mutableStateMapOf<String, String>() }
     val dadosDoBanco by dao.buscarTodasLeituras().collectAsState(initial = emptyList())
 
-    // Sincroniza o Banco com a Interface
     LaunchedEffect(dadosDoBanco) {
         leiturasEstufas.clear()
         dadosDoBanco.forEach { entity ->
@@ -48,31 +48,32 @@ fun MainScreen() {
         }
     }
 
-    // --- 2. LÓGICA DE TURNO E HORÁRIOS ---
-    val horariosPrimeiro = listOf("06:30", "08:30", "10:30", "12:30", "14:30", "16:30")
-    val horariosSegundo = listOf("18:30", "20:30", "22:30", "00:30", "02:30", "04:30")
+    // --- 2. LOGICA DE TURNOS E HORÁRIOS ---
+    val horarios1 = listOf("06:30", "08:30", "10:30", "12:30", "14:30", "16:30")
+    val horarios2 = listOf("18:30", "20:30", "22:30", "00:30", "02:30", "04:30")
 
     val agora = Calendar.getInstance()
     val horaRelogio = agora.get(Calendar.HOUR_OF_DAY)
     val turnoAuto = if (horaRelogio in 5..17) 1 else 2
 
     var turnoSelecionado by remember { mutableStateOf(turnoAuto) }
-    var horarioSelecionado by remember { mutableStateOf("06:30") }
-    val listaDeHorariosExibida = if (turnoSelecionado == 1) horariosPrimeiro else horariosSegundo
+    var horarioSelecionado by remember { mutableStateOf(if (turnoAuto == 1) "06:30" else "18:30") }
+    val listaDeHorariosExibida = if (turnoSelecionado == 1) horarios1 else horarios2
 
     var nomeCaldeirista by remember { mutableStateOf("") }
     val dataAtual = remember { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date()) }
 
-    // Estados dos Diálogos
     var mostrarDialogoRelatorio by remember { mutableStateOf(false) }
     var mostrarDialogoReset by remember { mutableStateOf(false) }
 
-    // Estados do Checklist Inicial
+    // Estados de Verificação
     var pressaoCompressor by remember { mutableStateOf("") }
     var damperStatus by remember { mutableStateOf("") }
     var damperObs by remember { mutableStateOf("") }
     var vazamentoStatus by remember { mutableStateOf("") }
     var vazamentoObs by remember { mutableStateOf("") }
+    var nivelCaixaStatus by remember { mutableStateOf("") }
+    var bombaPocoStatus by remember { mutableStateOf("") }
 
     // --- 3. LISTA DAS 14 ESTUFAS ---
     val listaEstufas = remember {
@@ -88,7 +89,6 @@ fun MainScreen() {
         )
     }
 
-    // --- 4. INTERFACE PRINCIPAL (SCAFFOLD) ---
     Scaffold(
         topBar = {
             IBKTopAppBar(
@@ -113,50 +113,27 @@ fun MainScreen() {
             )
         }
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(paddingValues).padding(horizontal = 16.dp)
-        ) {
+        LazyColumn(modifier = Modifier.fillMaxSize().padding(paddingValues).padding(horizontal = 16.dp)) {
             item {
                 Spacer(modifier = Modifier.height(16.dp))
-
-                // Nome do Caldeirista
                 OutlinedTextField(
                     value = nomeCaldeirista,
                     onValueChange = { nomeCaldeirista = it },
                     label = { Text("Nome do Caldeirista") },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF435D56),
-                        focusedLabelColor = Color(0xFF435D56)
-                    )
+                    modifier = Modifier.fillMaxWidth()
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
-
-                // Seleção de Turno
-                Text("Turno de Trabalho:", fontWeight = FontWeight.Bold)
+                Text("Turno:", fontWeight = FontWeight.Bold)
                 Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(
-                        onClick = { turnoSelecionado = 1 },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = if(turnoSelecionado == 1) Color(0xFF435D56) else Color.Gray)
-                    ) { Text("1º Turno") }
-                    Button(
-                        onClick = { turnoSelecionado = 2 },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = if(turnoSelecionado == 2) Color(0xFF435D56) else Color.Gray)
-                    ) { Text("2º Turno") }
+                    Button(onClick = { turnoSelecionado = 1; horarioSelecionado = "06:30" }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = if(turnoSelecionado == 1) Color(0xFF435D56) else Color.Gray)) { Text("1º Turno") }
+                    Button(onClick = { turnoSelecionado = 2; horarioSelecionado = "18:30" }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = if(turnoSelecionado == 2) Color(0xFF435D56) else Color.Gray)) { Text("2º Turno") }
                 }
 
-                // Seleção de Horário
-                Text("Horário da Coleta Atual:", fontWeight = FontWeight.Bold)
+                Text("Horário da Coleta:", fontWeight = FontWeight.Bold)
                 LazyRow(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(listaDeHorariosExibida) { hora ->
-                        FilterChip(
-                            selected = horarioSelecionado == hora,
-                            onClick = { horarioSelecionado = hora },
-                            label = { Text(hora) }
-                        )
+                        FilterChip(selected = horarioSelecionado == hora, onClick = { horarioSelecionado = hora }, label = { Text(hora) })
                     }
                 }
 
@@ -164,7 +141,6 @@ fun MainScreen() {
 
                 // Checklist Inicial
                 Text("Verificações de Início", style = MaterialTheme.typography.titleMedium, color = Color(0xFF435D56), fontWeight = FontWeight.Bold)
-
                 OutlinedTextField(
                     value = pressaoCompressor,
                     onValueChange = { pressaoCompressor = it },
@@ -172,143 +148,112 @@ fun MainScreen() {
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
-
                 ChecklistItem("2. Posição damper", damperStatus, damperObs, { damperStatus = it }, { damperObs = it })
                 ChecklistItem("3. Vazamento rede", vazamentoStatus, vazamentoObs, { vazamentoStatus = it }, { vazamentoObs = it })
 
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text("Verificações Periódicas ($horarioSelecionado)", style = MaterialTheme.typography.titleMedium, color = Color(0xFF435D56), fontWeight = FontWeight.Bold)
+                ChecklistItem("4. Nível caixa d'água", nivelCaixaStatus, "", { nivelCaixaStatus = it }, {})
+                ChecklistItem("5. Bomba poço artesiano", bombaPocoStatus, "", { bombaPocoStatus = it }, {})
+
                 Spacer(modifier = Modifier.height(24.dp))
-                Text("Medições ($horarioSelecionado)", style = MaterialTheme.typography.titleMedium, color = Color(0xFF435D56), fontWeight = FontWeight.Bold)
+                Text("Medições das Estufas", style = MaterialTheme.typography.titleMedium, color = Color(0xFF435D56), fontWeight = FontWeight.Bold)
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             }
 
-            // --- 5. CARDS DAS ESTUFAS ---
             items(listaEstufas) { estufa ->
-                val chaveTemp = "${estufa.id}_${horarioSelecionado}_temp"
-                val chavePress = "${estufa.id}_${horarioSelecionado}_press"
-                val chaveUmid = "${estufa.id}_${horarioSelecionado}_umid"
-                val chaveCiclo = "${estufa.id}_${horarioSelecionado}_ciclo"
+                val cT = "${estufa.id}_${horarioSelecionado}_temp"
+                val cP = "${estufa.id}_${horarioSelecionado}_press"
+                val cU = "${estufa.id}_${horarioSelecionado}_umid"
+                val cC = "${estufa.id}_${horarioSelecionado}_ciclo"
+                val cS = "${estufa.id}_${horarioSelecionado}_status" // Chave do status
 
                 EstufaCard(
                     estufa = estufa,
-                    valorTemp = leiturasEstufas[chaveTemp] ?: "",
-                    valorPress = leiturasEstufas[chavePress] ?: "",
-                    valorUmidade = leiturasEstufas[chaveUmid] ?: "",
-                    valorTempo = leiturasEstufas[chaveCiclo] ?: "",
-                    onTempChange = { novo ->
-                        leiturasEstufas[chaveTemp] = novo
-                        coroutineScope.launch(Dispatchers.IO) { dao.salvarLeitura(LeituraEntity(chaveTemp, novo)) }
-                    },
-                    onPressChange = { novo ->
-                        leiturasEstufas[chavePress] = novo
-                        coroutineScope.launch(Dispatchers.IO) { dao.salvarLeitura(LeituraEntity(chavePress, novo)) }
-                    },
-                    onUmidadeChange = { novo ->
-                        leiturasEstufas[chaveUmid] = novo
-                        coroutineScope.launch(Dispatchers.IO) { dao.salvarLeitura(LeituraEntity(chaveUmid, novo)) }
-                    },
-                    onTempoChange = { novo ->
-                        leiturasEstufas[chaveCiclo] = novo
-                        coroutineScope.launch(Dispatchers.IO) { dao.salvarLeitura(LeituraEntity(chaveCiclo, novo)) }
+                    valorTemp = leiturasEstufas[cT] ?: "",
+                    valorPress = leiturasEstufas[cP] ?: "",
+                    valorUmidade = leiturasEstufas[cU] ?: "",
+                    valorTempo = leiturasEstufas[cC] ?: "",
+                    valorStatus = leiturasEstufas[cS] ?: "Operação", // Passa o status salvo
+                    labelTempo = "Horas acumulada : horas",
+                    onTempChange = { n -> leiturasEstufas[cT] = n; coroutineScope.launch(Dispatchers.IO) { dao.salvarLeitura(LeituraEntity(cT, n)) } },
+                    onPressChange = { n -> leiturasEstufas[cP] = n; coroutineScope.launch(Dispatchers.IO) { dao.salvarLeitura(LeituraEntity(cP, n)) } },
+                    onUmidadeChange = { n -> leiturasEstufas[cU] = n; coroutineScope.launch(Dispatchers.IO) { dao.salvarLeitura(LeituraEntity(cU, n)) } },
+                    onTempoChange = { n -> leiturasEstufas[cC] = n; coroutineScope.launch(Dispatchers.IO) { dao.salvarLeitura(LeituraEntity(cC, n)) } },
+                    onStatusChange = { n ->
+                        leiturasEstufas[cS] = n
+                        coroutineScope.launch(Dispatchers.IO) { dao.salvarLeitura(LeituraEntity(cS, n)) }
                     }
                 )
             }
-
             item { Spacer(modifier = Modifier.height(100.dp)) }
         }
     }
 
-    // --- 6. DIÁLOGOS (RELATÓRIO E RESET) ---
-
-    if (mostrarDialogoRelatorio) {
-        AlertDialog(
-            onDismissRequest = { mostrarDialogoRelatorio = false },
-            title = { Text("Confirmar Envio") },
-            text = { Text("Deseja enviar o relatório via WhatsApp?") },
-            confirmButton = {
-                Button(onClick = {
-                    val relatorio = gerarTextoRelatorioAcumulado(
-                        nomeCaldeirista, dataAtual, pressaoCompressor,
-                        "$damperStatus $damperObs", "$vazamentoStatus $vazamentoObs",
-                        listaEstufas, listaDeHorariosExibida, leiturasEstufas
-                    )
-                    mostrarDialogoRelatorio = false
-                    compartilharRelatorio(contexto, relatorio)
-                }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF435D56))) {
-                    Text("Enviar")
-                }
-            },
-            dismissButton = { TextButton(onClick = { mostrarDialogoRelatorio = false }) { Text("Cancelar") } }
-        )
-    }
-
-    if (mostrarDialogoReset) {
-        AlertDialog(
-            onDismissRequest = { mostrarDialogoReset = false },
-            title = { Text("Limpar Tudo") },
-            text = { Text("Isso apagará todas as medições salvas. Confirmar?") },
-            confirmButton = {
-                Button(onClick = {
-                    coroutineScope.launch(Dispatchers.IO) {
-                        dao.limparDadosDoTurno() // Certifique-se que o DAO tem essa função
-                        launch(Dispatchers.Main) {
-                            leiturasEstufas.clear()
-                            pressaoCompressor = ""
-                            damperStatus = ""
-                            damperObs = ""
-                            vazamentoStatus = ""
-                            vazamentoObs = ""
-                            mostrarDialogoReset = false
-                            Toast.makeText(contexto, "Dados resetados!", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                }, colors = ButtonDefaults.buttonColors(containerColor = Color.Red)) {
-                    Text("Apagar", color = Color.White)
-                }
-            },
-            dismissButton = { TextButton(onClick = { mostrarDialogoReset = false }) { Text("Cancelar") } }
-        )
-    }
+    // --- DIÁLOGOS E RESET ---
+    // (Mantenha os diálogos de Relatório e Reset como estão no seu código original)
 }
 
-// --- 7. FUNÇÕES AUXILIARES ---
+// --- FUNÇÕES AUXILIARES ---
+
+fun converterHorasParaDias(textoTempo: String): String {
+    return try {
+        val partes = textoTempo.split(":")
+        val horasTotais = partes[0].toLong()
+        val minutos = if (partes.size > 1) partes[1] else "00"
+        val dias = horasTotais / 24
+        val horasRestantes = horasTotais % 24
+        if (dias > 0) "${dias}d ${horasRestantes}h e ${minutos}min"
+        else "${horasRestantes}h e ${minutos}min"
+    } catch (e: Exception) { textoTempo }
+}
 
 fun gerarTextoRelatorioAcumulado(
     nome: String, data: String, pressaoComp: String, damper: String, vazamento: String,
+    caixa: String, bomba: String,
     estufas: List<Estufa>, horarios: List<String>, leituras: Map<String, String>
 ): String {
     val sb = StringBuilder()
-    sb.append("*RELATÓRIO IBK CHECK*\n")
-    sb.append("Caldeirista: $nome\nData: $data\n")
+    sb.append("*RELATÓRIO IBK*\nCaldeirista: $nome\nData: $data\n")
     sb.append("----------------------------\n")
     sb.append("*CHECKLIST INICIAL*\n")
-    sb.append("Pressão Comp: $pressaoComp Bar\nDamper: $damper\nVazamento: $vazamento\n\n")
+    sb.append("Compressor: $pressaoComp Bar\nDamper: $damper\nVazamento: $vazamento\n\n")
 
     horarios.forEach { hora ->
         val sbHora = StringBuilder()
-        var temDadosNaHora = false
+        var temDados = false
         sbHora.append("*COLETA $hora*\n")
 
+        if(caixa.isNotEmpty() || bomba.isNotEmpty()){
+            sbHora.append("Caixa d'água: $caixa | Bomba Poço: $bomba\n")
+        }
+
         estufas.forEach { estufa ->
+            val status = leituras["${estufa.id}_${hora}_status"] ?: "Operação"
             val t = leituras["${estufa.id}_${hora}_temp"] ?: ""
             val p = leituras["${estufa.id}_${hora}_press"] ?: ""
             val u = leituras["${estufa.id}_${hora}_umid"] ?: ""
             val c = leituras["${estufa.id}_${hora}_ciclo"] ?: ""
 
-            if (t.isNotEmpty() || p.isNotEmpty()) {
-                sbHora.append("- ${estufa.nome}: $t°C | $p ${estufa.unidadePressao} | $u% Umid | Ciclo: $c\n")
-                temDadosNaHora = true
+            // Se o status for diferente de operação, escreve o aviso
+            if (status != "Operação") {
+                sbHora.append("- ${estufa.nome}: *STATUS: ${status.uppercase()}*\n")
+                temDados = true
+            }
+            // Se estiver em operação, verifica se há dados preenchidos
+            else if (t.isNotEmpty() || p.isNotEmpty() || u.isNotEmpty() || c.isNotEmpty()) {
+                val tempoFormatado = if (c.isNotEmpty()) converterHorasParaDias(c) else ""
+                sbHora.append("- ${estufa.nome}: $u% Umid | $t°C | $p ${estufa.unidadePressao} | Ciclo: $tempoFormatado\n")
+                temDados = true
             }
         }
-
-        if (temDadosNaHora) {
-            sb.append(sbHora.toString()).append("\n")
-        }
+        if (temDados) sb.append(sbHora.toString()).append("\n")
     }
-
-    sb.append("_Enviado via App IBK Check_")
     return sb.toString()
 }
 
+// (Mantenha a função compartilharRelatorio)
 fun compartilharRelatorio(contexto: Context, texto: String) {
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = "text/plain"

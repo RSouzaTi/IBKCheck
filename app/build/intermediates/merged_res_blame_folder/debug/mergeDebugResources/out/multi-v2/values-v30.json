@@ -1,0 +1,38 @@
+{
+    "logs": [
+        {
+            "outputFile": "br.com.ibk.check.app-mergeDebugResources-45:/values-v30/values-v30.xml",
+            "map": [
+                {
+                    "source": "C:\\Users\\DELL\\.gradle\\caches\\9.1.0\\transforms\\ca3f28031b5a9ad4b519bc865b29fbb0\\workspace\\transformed\\core-splashscreen-1.2.0\\res\\values-v30\\values-v30.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endLines": "7",
+                        "endColumns": "12",
+                        "endOffsets": "433"
+                    },
+                    "to": {
+                        "startLines": "3",
+                        "startColumns": "4",
+                        "startOffsets": "128",
+                        "endLines": "8",
+                        "endColumns": "12",
+                        "endOffsets": "506"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\DELL\\.gradle\\caches\\9.1.0\\transforms\\9f23fcb17ff8036e7e0db364a64ecbfd\\workspace\\transformed\\material3\\res\\values-v30\\values-v30.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "72",
+                        "endOffsets": "123"
+                    }
+                }
+            ]
+        }
+    ]
+}

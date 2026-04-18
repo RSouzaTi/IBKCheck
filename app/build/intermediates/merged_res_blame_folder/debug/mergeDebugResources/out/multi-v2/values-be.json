@@ -4,24 +4,7 @@
             "outputFile": "br.com.ibk.check.app-mergeDebugResources-45:/values-be/values-be.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\DELL\\.gradle\\caches\\9.1.0\\transforms\\dd6fe437cfc736152be60a61bee8bf16\\workspace\\transformed\\material\\res\\values-be\\values-be.xml",
-                    "from": {
-                        "startLines": "2",
-                        "startColumns": "4",
-                        "startOffsets": "55",
-                        "endColumns": "90",
-                        "endOffsets": "141"
-                    },
-                    "to": {
-                        "startLines": "111",
-                        "startColumns": "4",
-                        "startOffsets": "11810",
-                        "endColumns": "90",
-                        "endOffsets": "11896"
-                    }
-                },
-                {
-                    "source": "C:\\Users\\DELL\\.gradle\\caches\\9.1.0\\transforms\\dcf95bcf14cf44f2309b6fb5eb52721e\\workspace\\transformed\\ui\\res\\values-be\\values-be.xml",
+                    "source": "C:\\Users\\DELL\\.gradle\\caches\\9.1.0\\transforms\\a9df0e4d165488a6cebda031b78df999\\workspace\\transformed\\ui\\res\\values-be\\values-be.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -38,24 +21,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\DELL\\.gradle\\caches\\9.1.0\\transforms\\70d616e0db55d863877b441da5c546ce\\workspace\\transformed\\core-1.18.0\\res\\values-be\\values-be.xml",
-                    "from": {
-                        "startLines": "2,3,4,5,6,7,8,9",
-                        "startColumns": "4,4,4,4,4,4,4,4",
-                        "startOffsets": "55,153,255,355,456,562,665,786",
-                        "endColumns": "97,101,99,100,105,102,120,100",
-                        "endOffsets": "148,250,350,451,557,660,781,882"
-                    },
-                    "to": {
-                        "startLines": "31,32,33,34,35,36,37,122",
-                        "startColumns": "4,4,4,4,4,4,4,4",
-                        "startOffsets": "3047,3145,3247,3347,3448,3554,3657,12720",
-                        "endColumns": "97,101,99,100,105,102,120,100",
-                        "endOffsets": "3140,3242,3342,3443,3549,3652,3773,12816"
-                    }
-                },
-                {
-                    "source": "C:\\Users\\DELL\\.gradle\\caches\\9.1.0\\transforms\\0c3d63b12402d496746e435cf1a0905d\\workspace\\transformed\\foundation\\res\\values-be\\values-be.xml",
+                    "source": "C:\\Users\\DELL\\.gradle\\caches\\9.1.0\\transforms\\794d4f47740edab4e9fe2951a2e7c98a\\workspace\\transformed\\foundation\\res\\values-be\\values-be.xml",
                     "from": {
                         "startLines": "2,3,4",
                         "startColumns": "4,4,4",
@@ -72,7 +38,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\DELL\\.gradle\\caches\\9.1.0\\transforms\\2f5536fa407b347da3607aec5906e43c\\workspace\\transformed\\material3\\res\\values-be\\values-be.xml",
+                    "source": "C:\\Users\\DELL\\.gradle\\caches\\9.1.0\\transforms\\9f23fcb17ff8036e7e0db364a64ecbfd\\workspace\\transformed\\material3\\res\\values-be\\values-be.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -89,7 +55,24 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\DELL\\.gradle\\caches\\9.1.0\\transforms\\5e753dfb291089fa7c15b039012b04a4\\workspace\\transformed\\appcompat-1.7.1\\res\\values-be\\values-be.xml",
+                    "source": "C:\\Users\\DELL\\.gradle\\caches\\9.1.0\\transforms\\5c980c9e86d672c4b83cb2eaaf215dfb\\workspace\\transformed\\material\\res\\values-be\\values-be.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "90",
+                        "endOffsets": "141"
+                    },
+                    "to": {
+                        "startLines": "111",
+                        "startColumns": "4",
+                        "startOffsets": "11810",
+                        "endColumns": "90",
+                        "endOffsets": "11896"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\DELL\\.gradle\\caches\\9.1.0\\transforms\\5e3ff00032a4fa64fb5335df4ce77c3a\\workspace\\transformed\\appcompat-1.7.1\\res\\values-be\\values-be.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -103,6 +86,23 @@
                         "startOffsets": "105,225,328,444,530,635,754,834,911,1003,1097,1192,1286,1381,1475,1571,1666,1758,1850,1931,2037,2142,2240,2348,2454,2562,2735,12241",
                         "endColumns": "119,102,115,85,104,118,79,76,91,93,94,93,94,93,95,94,91,91,80,105,104,97,107,105,107,172,99,81",
                         "endOffsets": "220,323,439,525,630,749,829,906,998,1092,1187,1281,1376,1470,1566,1661,1753,1845,1926,2032,2137,2235,2343,2449,2557,2730,2830,12318"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\DELL\\.gradle\\caches\\9.1.0\\transforms\\799fe4b345bfa781ecc3413fd58f77aa\\workspace\\transformed\\core-1.18.0\\res\\values-be\\values-be.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8,9",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "55,153,255,355,456,562,665,786",
+                        "endColumns": "97,101,99,100,105,102,120,100",
+                        "endOffsets": "148,250,350,451,557,660,781,882"
+                    },
+                    "to": {
+                        "startLines": "31,32,33,34,35,36,37,122",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "3047,3145,3247,3347,3448,3554,3657,12720",
+                        "endColumns": "97,101,99,100,105,102,120,100",
+                        "endOffsets": "3140,3242,3342,3443,3549,3652,3773,12816"
                     }
                 }
             ]
