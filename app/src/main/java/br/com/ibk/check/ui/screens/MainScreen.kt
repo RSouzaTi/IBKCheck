@@ -28,7 +28,6 @@ import java.util.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen() {
@@ -139,7 +138,6 @@ fun MainScreen() {
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
 
-                // Checklist Inicial
                 Text("Verificações de Início", style = MaterialTheme.typography.titleMedium, color = Color(0xFF435D56), fontWeight = FontWeight.Bold)
                 OutlinedTextField(
                     value = pressaoCompressor,
@@ -167,7 +165,7 @@ fun MainScreen() {
                 val cP = "${estufa.id}_${horarioSelecionado}_press"
                 val cU = "${estufa.id}_${horarioSelecionado}_umid"
                 val cC = "${estufa.id}_${horarioSelecionado}_ciclo"
-                val cS = "${estufa.id}_${horarioSelecionado}_status" // Chave do status
+                val cS = "${estufa.id}_${horarioSelecionado}_status"
 
                 EstufaCard(
                     estufa = estufa,
@@ -175,7 +173,7 @@ fun MainScreen() {
                     valorPress = leiturasEstufas[cP] ?: "",
                     valorUmidade = leiturasEstufas[cU] ?: "",
                     valorTempo = leiturasEstufas[cC] ?: "",
-                    valorStatus = leiturasEstufas[cS] ?: "Operação", // Passa o status salvo
+                    valorStatus = leiturasEstufas[cS] ?: "Operação",
                     labelTempo = "Horas acumulada : horas",
                     onTempChange = { n -> leiturasEstufas[cT] = n; coroutineScope.launch(Dispatchers.IO) { dao.salvarLeitura(LeituraEntity(cT, n)) } },
                     onPressChange = { n -> leiturasEstufas[cP] = n; coroutineScope.launch(Dispatchers.IO) { dao.salvarLeitura(LeituraEntity(cP, n)) } },
@@ -191,8 +189,61 @@ fun MainScreen() {
         }
     }
 
-    // --- DIÁLOGOS E RESET ---
-    // (Mantenha os diálogos de Relatório e Reset como estão no seu código original)
+    // --- 4. DIÁLOGOS (ESSENCIAL PARA O RELATÓRIO) ---
+
+    if (mostrarDialogoRelatorio) {
+        AlertDialog(
+            onDismissRequest = { mostrarDialogoRelatorio = false },
+            confirmButton = {
+                Button(onClick = {
+                    val listaH = if (turnoSelecionado == 1) horarios1 else horarios2
+                    val relatorio = gerarTextoRelatorioAcumulado(
+                        nome = nomeCaldeirista,
+                        data = dataAtual,
+                        pressaoComp = pressaoCompressor,
+                        damper = "$damperStatus $damperObs",
+                        vazamento = "$vazamentoStatus $vazamentoObs",
+                        caixa = nivelCaixaStatus,
+                        bomba = bombaPocoStatus,
+                        estufas = listaEstufas,
+                        horarios = listaH,
+                        leituras = leiturasEstufas
+                    )
+                    mostrarDialogoRelatorio = false
+                    compartilharRelatorio(contexto, relatorio)
+                }) { Text("Enviar via WhatsApp") }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostrarDialogoRelatorio = false }) { Text("Cancelar") }
+            },
+            title = { Text("Confirmar Relatório") },
+            text = { Text("Deseja enviar as medições agora?") }
+        )
+    }
+
+    if (mostrarDialogoReset) {
+        AlertDialog(
+            onDismissRequest = { mostrarDialogoReset = false },
+            confirmButton = {
+                Button(onClick = {
+                    coroutineScope.launch(Dispatchers.IO) {
+                        dao.limparDadosDoTurno()
+                        launch(Dispatchers.Main) {
+                            leiturasEstufas.clear()
+                            pressaoCompressor = ""; damperStatus = ""; vazamentoStatus = ""
+                            nivelCaixaStatus = ""; bombaPocoStatus = ""
+                            mostrarDialogoReset = false
+                        }
+                    }
+                }, colors = ButtonDefaults.buttonColors(containerColor = Color.Red)) { Text("Limpar Tudo", color = Color.White) }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostrarDialogoReset = false }) { Text("Cancelar") }
+            },
+            title = { Text("Atenção") },
+            text = { Text("Isso apagará todas as medições salvas. Confirma?") }
+        )
+    }
 }
 
 // --- FUNÇÕES AUXILIARES ---
@@ -236,12 +287,10 @@ fun gerarTextoRelatorioAcumulado(
             val u = leituras["${estufa.id}_${hora}_umid"] ?: ""
             val c = leituras["${estufa.id}_${hora}_ciclo"] ?: ""
 
-            // Se o status for diferente de operação, escreve o aviso
             if (status != "Operação") {
                 sbHora.append("- ${estufa.nome}: *STATUS: ${status.uppercase()}*\n")
                 temDados = true
             }
-            // Se estiver em operação, verifica se há dados preenchidos
             else if (t.isNotEmpty() || p.isNotEmpty() || u.isNotEmpty() || c.isNotEmpty()) {
                 val tempoFormatado = if (c.isNotEmpty()) converterHorasParaDias(c) else ""
                 sbHora.append("- ${estufa.nome}: $u% Umid | $t°C | $p ${estufa.unidadePressao} | Ciclo: $tempoFormatado\n")
@@ -253,7 +302,6 @@ fun gerarTextoRelatorioAcumulado(
     return sb.toString()
 }
 
-// (Mantenha a função compartilharRelatorio)
 fun compartilharRelatorio(contexto: Context, texto: String) {
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = "text/plain"
