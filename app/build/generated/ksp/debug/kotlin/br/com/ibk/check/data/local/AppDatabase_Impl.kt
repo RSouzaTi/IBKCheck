@@ -32,11 +32,11 @@ public class AppDatabase_Impl : AppDatabase() {
   }
 
   protected override fun createOpenDelegate(): RoomOpenDelegate {
-    val _openDelegate: RoomOpenDelegate = object : RoomOpenDelegate(1, "0c7bac33e20cc5ab010b04521c8c9033", "8182e9f8a98bc8b220befa811c8613a2") {
+    val _openDelegate: RoomOpenDelegate = object : RoomOpenDelegate(1, "fe1514336de698676cbbb5350c6c314e", "81b5169195d3bdb882e59b1a1413f330") {
       public override fun createAllTables(connection: SQLiteConnection) {
-        connection.execSQL("CREATE TABLE IF NOT EXISTS `leituras_table` (`idChave` TEXT NOT NULL, `valor` TEXT NOT NULL, PRIMARY KEY(`idChave`))")
+        connection.execSQL("CREATE TABLE IF NOT EXISTS `leituras_table` (`idChave` TEXT NOT NULL, `valor` TEXT NOT NULL, `dataHoraMillis` INTEGER NOT NULL, PRIMARY KEY(`idChave`))")
         connection.execSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)")
-        connection.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '0c7bac33e20cc5ab010b04521c8c9033')")
+        connection.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'fe1514336de698676cbbb5350c6c314e')")
       }
 
       public override fun dropAllTables(connection: SQLiteConnection) {
@@ -61,6 +61,7 @@ public class AppDatabase_Impl : AppDatabase() {
         val _columnsLeiturasTable: MutableMap<String, TableInfo.Column> = mutableMapOf()
         _columnsLeiturasTable.put("idChave", TableInfo.Column("idChave", "TEXT", true, 1, null, TableInfo.CREATED_FROM_ENTITY))
         _columnsLeiturasTable.put("valor", TableInfo.Column("valor", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY))
+        _columnsLeiturasTable.put("dataHoraMillis", TableInfo.Column("dataHoraMillis", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY))
         val _foreignKeysLeiturasTable: MutableSet<TableInfo.ForeignKey> = mutableSetOf()
         val _indicesLeiturasTable: MutableSet<TableInfo.Index> = mutableSetOf()
         val _infoLeiturasTable: TableInfo = TableInfo("leituras_table", _columnsLeiturasTable, _foreignKeysLeiturasTable, _indicesLeiturasTable)

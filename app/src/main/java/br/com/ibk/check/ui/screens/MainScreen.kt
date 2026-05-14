@@ -1,5 +1,6 @@
 package br.com.ibk.check.ui.screens
 
+import androidx.lifecycle.viewmodel.compose.viewModel
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
@@ -23,6 +24,7 @@ import br.com.ibk.check.data.local.AppDatabase
 import br.com.ibk.check.data.local.LeituraEntity
 import br.com.ibk.check.model.Estufa
 import br.com.ibk.check.ui.components.*
+import br.com.ibk.check.ui.viewModel.LeituraViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlinx.coroutines.Dispatchers
@@ -34,10 +36,12 @@ fun MainScreen() {
     val contexto = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    // --- 1. ESTADOS E BANCO DE DADOS ---
-    var nomeCaldeirista by remember { mutableStateOf("") }
+    // --- 1. CONEXÃO COM O VIEWMODEL E DAO ---
     val db = AppDatabase.getDatabase(contexto)
     val dao = db.leituraDao()
+    val viewModel: LeituraViewModel = viewModel(factory = LeituraViewModel.Factory(dao))
+
+    var nomeCaldeirista by remember { mutableStateOf("") }
     val leiturasEstufas = remember { mutableStateMapOf<String, String>() }
     val dadosDoBanco by dao.buscarTodasLeituras().collectAsState(initial = emptyList())
 
@@ -55,7 +59,6 @@ fun MainScreen() {
     // --- 2. LÓGICA DE TURNOS E HORÁRIOS ---
     val horarios1 = listOf("06:30", "08:30", "10:30", "12:30", "14:30", "16:30")
     val horarios2 = listOf("18:30", "20:30", "22:30", "00:30", "02:30", "04:30")
-
     val turnoAuto = if (Calendar.getInstance().get(Calendar.HOUR_OF_DAY) in 5..17) 1 else 2
     var turnoSelecionado by remember { mutableStateOf(turnoAuto) }
     var horarioSelecionado by remember { mutableStateOf(if (turnoAuto == 1) "06:30" else "18:30") }
@@ -69,7 +72,6 @@ fun MainScreen() {
     var vazamentoObs by remember { mutableStateOf("") }
     var nivelCaixaStatus by remember { mutableStateOf("") }
     var bombaPocoStatus by remember { mutableStateOf("") }
-
     var tbuEs03Status by remember { mutableStateOf("") }
     var tbuEs03Obs by remember { mutableStateOf("") }
     var tbuEs04Status by remember { mutableStateOf("") }
@@ -86,7 +88,7 @@ fun MainScreen() {
             Estufa("7", "Estufa ES07"),
             Estufa("8", "Estufa ES08", unidadePressao = "MPa"),
             Estufa("9", "Estufa ES09"), Estufa("10", "Estufa ES10"),
-            Estufa("11", "Estufa ES11"), Estufa("12", "Estufa ES12"),
+            Estufa("11", "Estufa ES11"), Estufa("12", "Estufa ES12", unidadePressao = "MPa"),
             Estufa("13", "Estufa ES13"), Estufa("14", "Estufa ES14")
         )
     }
@@ -102,10 +104,7 @@ fun MainScreen() {
         floatingActionButton = {
             val podeGerar = nomeCaldeirista.isNotBlank()
             ExtendedFloatingActionButton(
-                onClick = {
-                    if (podeGerar) mostrarDialogoRelatorio = true
-                    else Toast.makeText(contexto, "Informe o Caldeirista", Toast.LENGTH_SHORT).show()
-                },
+                onClick = { if (podeGerar) mostrarDialogoRelatorio = true else Toast.makeText(contexto, "Informe o Caldeirista", Toast.LENGTH_SHORT).show() },
                 containerColor = if (podeGerar) Color(0xFF435D56) else Color.Gray,
                 contentColor = Color.White,
                 icon = { Icon(Icons.Default.Check, contentDescription = null) },
@@ -120,7 +119,7 @@ fun MainScreen() {
                     value = nomeCaldeirista,
                     onValueChange = {
                         nomeCaldeirista = it
-                        coroutineScope.launch(Dispatchers.IO) { dao.salvarLeitura(LeituraEntity("config_nome_caldeirista", it)) }
+                        coroutineScope.launch(Dispatchers.IO) { dao.salvarLeitura(LeituraEntity("config_nome_caldeirista", it, System.currentTimeMillis())) }
                     },
                     label = { Text("Nome do Caldeirista") },
                     modifier = Modifier.fillMaxWidth()
@@ -175,18 +174,18 @@ fun MainScreen() {
                     valorTempo = leiturasEstufas["${p}_ciclo"] ?: "",
                     valorStatus = leiturasEstufas["${p}_status"] ?: "Operação",
                     labelTempo = "Horas acumulada : horas",
-                    onTempChange = { n -> leiturasEstufas["${p}_temp"] = n; coroutineScope.launch(Dispatchers.IO) { dao.salvarLeitura(LeituraEntity("${p}_temp", n)) } },
-                    onPressChange = { n -> leiturasEstufas["${p}_press"] = n; coroutineScope.launch(Dispatchers.IO) { dao.salvarLeitura(LeituraEntity("${p}_press", n)) } },
-                    onUmidadeChange = { n -> leiturasEstufas["${p}_umid"] = n; coroutineScope.launch(Dispatchers.IO) { dao.salvarLeitura(LeituraEntity("${p}_umid", n)) } },
-                    onTempoChange = { n -> leiturasEstufas["${p}_ciclo"] = n; coroutineScope.launch(Dispatchers.IO) { dao.salvarLeitura(LeituraEntity("${p}_ciclo", n)) } },
-                    onStatusChange = { n -> leiturasEstufas["${p}_status"] = n; coroutineScope.launch(Dispatchers.IO) { dao.salvarLeitura(LeituraEntity("${p}_status", n)) } }
+                    onTempChange = { n -> leiturasEstufas["${p}_temp"] = n; coroutineScope.launch(Dispatchers.IO) { dao.salvarLeitura(LeituraEntity("${p}_temp", n, System.currentTimeMillis())) } },
+                    onPressChange = { n -> leiturasEstufas["${p}_press"] = n; coroutineScope.launch(Dispatchers.IO) { dao.salvarLeitura(LeituraEntity("${p}_press", n, System.currentTimeMillis())) } },
+                    onUmidadeChange = { n -> leiturasEstufas["${p}_umid"] = n; coroutineScope.launch(Dispatchers.IO) { dao.salvarLeitura(LeituraEntity("${p}_umid", n, System.currentTimeMillis())) } },
+                    onTempoChange = { n -> leiturasEstufas["${p}_ciclo"] = n; coroutineScope.launch(Dispatchers.IO) { dao.salvarLeitura(LeituraEntity("${p}_ciclo", n, System.currentTimeMillis())) } },
+                    onStatusChange = { n -> leiturasEstufas["${p}_status"] = n; coroutineScope.launch(Dispatchers.IO) { dao.salvarLeitura(LeituraEntity("${p}_status", n, System.currentTimeMillis())) } }
                 )
             }
             item { Spacer(modifier = Modifier.height(100.dp)) }
         }
     }
 
-    // --- DIÁLOGOS (RESTAURADOS) ---
+    // --- DIÁLOGOS ---
     if (mostrarDialogoRelatorio) {
         AlertDialog(
             onDismissRequest = { mostrarDialogoRelatorio = false },
@@ -194,18 +193,11 @@ fun MainScreen() {
                 Button(onClick = {
                     val dataAtual = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
                     val relatorio = gerarTextoRelatorioFinal(
-                        nome = nomeCaldeirista,
-                        data = dataAtual,
-                        pressaoComp = pressaoCompressor,
-                        damper = "$damperStatus $damperObs",
-                        vazamento = "$vazamentoStatus $vazamentoObs",
-                        caixa = nivelCaixaStatus,
-                        bomba = bombaPocoStatus,
-                        tbu03 = "$tbuEs03Status $tbuEs03Obs",
-                        tbu04 = "$tbuEs04Status $tbuEs04Obs",
-                        estufas = listaEstufas,
-                        horarioSelecionado = horarioSelecionado,
-                        leituras = leiturasEstufas
+                        nome = nomeCaldeirista, data = dataAtual, pressaoComp = pressaoCompressor,
+                        damper = "$damperStatus $damperObs", vazamento = "$vazamentoStatus $vazamentoObs",
+                        caixa = nivelCaixaStatus, bomba = bombaPocoStatus,
+                        tbu03 = "$tbuEs03Status $tbuEs03Obs", tbu04 = "$tbuEs04Status $tbuEs04Obs",
+                        estufas = listaEstufas, horarioSelecionado = horarioSelecionado, leituras = leiturasEstufas
                     )
                     compartilharRelatorio(contexto, relatorio)
                     mostrarDialogoRelatorio = false
@@ -239,25 +231,14 @@ fun MainScreen() {
     }
 }
 
-// --- FUNÇÕES FORA DA MAINSCREEN (ESCOPO CORRETO) ---
+// --- FUNÇÕES DE SUPORTE (FORA DA MAINSCREEN) ---
 
 fun gerarTextoRelatorioFinal(
-    nome: String,
-    data: String,
-    pressaoComp: String,
-    damper: String,
-    vazamento: String,
-    caixa: String,
-    bomba: String,
-    tbu03: String,
-    tbu04: String,
-    estufas: List<Estufa>,
-    horarioSelecionado: String,
-    leituras: Map<String, String>
+    nome: String, data: String, pressaoComp: String, damper: String, vazamento: String,
+    caixa: String, bomba: String, tbu03: String, tbu04: String,
+    estufas: List<Estufa>, horarioSelecionado: String, leituras: Map<String, String>
 ): String {
     val sb = StringBuilder()
-
-    // Cabeçalho
     sb.append("📋 *RELATÓRIO DE COLETA IBK*\n")
     sb.append("━━━━━━━━━━━━━━━━━━━━\n")
     sb.append("🕒 *HORÁRIO:* $horarioSelecionado\n")
@@ -265,7 +246,6 @@ fun gerarTextoRelatorioFinal(
     sb.append("📅 *DATA:* $data\n")
     sb.append("━━━━━━━━━━━━━━━━━━━━\n\n")
 
-    // Bloco de Sistema exatamente como você pediu
     sb.append("⚙️ *SISTEMA*\n")
     sb.append("┣ 🔘 Compressor: $pressaoComp Bar\n")
     sb.append("┣ 🆗 Damper: $damper\n")
@@ -275,7 +255,6 @@ fun gerarTextoRelatorioFinal(
     sb.append("┣ 🧪 TBU ES03: $tbu03\n")
     sb.append("┗ 🧪 TBU ES04: $tbu04\n\n")
 
-    // Bloco de Estufas
     sb.append("🌡️ *MEDIÇÕES DAS ESTUFAS*\n")
     sb.append("━━━━━━━━━━━━━━━━━━━━\n")
 
@@ -289,21 +268,16 @@ fun gerarTextoRelatorioFinal(
 
         if (t.isNotEmpty() || u.isNotEmpty() || status != "Operação") {
             if (status == "Operação") {
-                // Cálculo de tempo usando a função que converte o formato "324 : 12"
                 val tempoFormatado = if (c.isNotEmpty()) converterHorasParaDias(c) else ""
-
                 sb.append("🏗️ *${estufa.nome}*\n")
                 sb.append("┗ 💧 $u% | 🌡️ $t°C | 💨 $p ${estufa.unidadePressao} | ⏳ $tempoFormatado\n\n")
             } else {
-                // Estufas em Manutenção ou Desligadas
                 sb.append("🛠️ *${estufa.nome}*: ${status.uppercase()}\n\n")
             }
         }
     }
-
     sb.append("━━━━━━━━━━━━━━━━━━━━\n")
     sb.append("✅ *Fim do Relatório*")
-
     return sb.toString()
 }
 
@@ -314,31 +288,21 @@ fun compartilharRelatorio(contexto: Context, texto: String) {
     }
     contexto.startActivity(Intent.createChooser(intent, "Compartilhar"))
 }
+
 fun converterHorasParaDias(input: String): String {
     return try {
         if (input.contains(":")) {
             val partes = input.split(":")
             val horasAcumuladas = partes[0].trim().toLongOrNull() ?: 0L
-            val horasCorridas = partes[1].trim() // Mantém como texto (ex: "12")
-
+            val horasCorridas = partes[1].trim()
             val dias = horasAcumuladas / 24
             val horasRestantes = horasAcumuladas % 24
-
-            // Se as horas corridas já tiverem minutos (ex: 12:30), usamos como estão
-            // Se for apenas o número, formatamos como horas
-            if (dias > 0) {
-                "${dias}d ${horasRestantes}h e ${horasCorridas}min"
-            } else {
-                "${horasRestantes}h e ${horasCorridas}min"
-            }
+            if (dias > 0) "${dias}d ${horasRestantes}h e ${horasCorridas}min" else "${horasRestantes}h e ${horasCorridas}min"
         } else {
-            // Caso ele digite apenas um número sem os dois pontos
             val total = input.toLongOrNull() ?: 0L
             val dias = total / 24
             val resto = total % 24
             if (dias > 0) "${dias}d ${resto}h" else "${resto}h"
         }
-    } catch (e: Exception) {
-        input // Retorna o que ele digitou se algo der errado
-    }
+    } catch (e: Exception) { input }
 }

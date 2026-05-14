@@ -6,6 +6,7 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "leituras_table")
 data class LeituraEntity(
-    @PrimaryKey val idChave: String, // Ex: "1_08:30_temp"
-    val valor: String
+    @PrimaryKey val idChave: String, // Ex: "1_08:30_umid"
+    val valor: String,
+    val dataHoraMillis: Long = System.currentTimeMillis() // Novo campo!
 )

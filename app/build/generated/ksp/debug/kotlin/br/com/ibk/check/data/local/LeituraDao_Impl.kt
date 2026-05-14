@@ -8,6 +8,7 @@ import androidx.room.util.performSuspending
 import androidx.sqlite.SQLiteStatement
 import javax.`annotation`.processing.Generated
 import kotlin.Int
+import kotlin.Long
 import kotlin.String
 import kotlin.Suppress
 import kotlin.Unit
@@ -28,11 +29,12 @@ public class LeituraDao_Impl(
   init {
     this.__db = __db
     this.__insertAdapterOfLeituraEntity = object : EntityInsertAdapter<LeituraEntity>() {
-      protected override fun createQuery(): String = "INSERT OR REPLACE INTO `leituras_table` (`idChave`,`valor`) VALUES (?,?)"
+      protected override fun createQuery(): String = "INSERT OR REPLACE INTO `leituras_table` (`idChave`,`valor`,`dataHoraMillis`) VALUES (?,?,?)"
 
       protected override fun bind(statement: SQLiteStatement, entity: LeituraEntity) {
         statement.bindText(1, entity.idChave)
         statement.bindText(2, entity.valor)
+        statement.bindLong(3, entity.dataHoraMillis)
       }
     }
   }
@@ -48,6 +50,7 @@ public class LeituraDao_Impl(
       try {
         val _columnIndexOfIdChave: Int = getColumnIndexOrThrow(_stmt, "idChave")
         val _columnIndexOfValor: Int = getColumnIndexOrThrow(_stmt, "valor")
+        val _columnIndexOfDataHoraMillis: Int = getColumnIndexOrThrow(_stmt, "dataHoraMillis")
         val _result: MutableList<LeituraEntity> = mutableListOf()
         while (_stmt.step()) {
           val _item: LeituraEntity
@@ -55,7 +58,46 @@ public class LeituraDao_Impl(
           _tmpIdChave = _stmt.getText(_columnIndexOfIdChave)
           val _tmpValor: String
           _tmpValor = _stmt.getText(_columnIndexOfValor)
-          _item = LeituraEntity(_tmpIdChave,_tmpValor)
+          val _tmpDataHoraMillis: Long
+          _tmpDataHoraMillis = _stmt.getLong(_columnIndexOfDataHoraMillis)
+          _item = LeituraEntity(_tmpIdChave,_tmpValor,_tmpDataHoraMillis)
+          _result.add(_item)
+        }
+        _result
+      } finally {
+        _stmt.close()
+      }
+    }
+  }
+
+  public override fun buscarHistoricoUmidade(estufaId: String): Flow<List<LeituraEntity>> {
+    val _sql: String = """
+        |
+        |        SELECT * FROM leituras_table 
+        |        WHERE idChave LIKE ? || '%' 
+        |        AND idChave LIKE '%_umid' 
+        |        ORDER BY dataHoraMillis ASC 
+        |        LIMIT 7
+        |    
+        """.trimMargin()
+    return createFlow(__db, false, arrayOf("leituras_table")) { _connection ->
+      val _stmt: SQLiteStatement = _connection.prepare(_sql)
+      try {
+        var _argIndex: Int = 1
+        _stmt.bindText(_argIndex, estufaId)
+        val _columnIndexOfIdChave: Int = getColumnIndexOrThrow(_stmt, "idChave")
+        val _columnIndexOfValor: Int = getColumnIndexOrThrow(_stmt, "valor")
+        val _columnIndexOfDataHoraMillis: Int = getColumnIndexOrThrow(_stmt, "dataHoraMillis")
+        val _result: MutableList<LeituraEntity> = mutableListOf()
+        while (_stmt.step()) {
+          val _item: LeituraEntity
+          val _tmpIdChave: String
+          _tmpIdChave = _stmt.getText(_columnIndexOfIdChave)
+          val _tmpValor: String
+          _tmpValor = _stmt.getText(_columnIndexOfValor)
+          val _tmpDataHoraMillis: Long
+          _tmpDataHoraMillis = _stmt.getLong(_columnIndexOfDataHoraMillis)
+          _item = LeituraEntity(_tmpIdChave,_tmpValor,_tmpDataHoraMillis)
           _result.add(_item)
         }
         _result

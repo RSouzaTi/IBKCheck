@@ -4,7 +4,7 @@
             "outputFile": "br.com.ibk.check.app-mergeDebugResources-45:/values-v31/values-v31.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\DELL\\.gradle\\caches\\9.1.0\\transforms\\ca3f28031b5a9ad4b519bc865b29fbb0\\workspace\\transformed\\core-splashscreen-1.2.0\\res\\values-v31\\values-v31.xml",
+                    "source": "C:\\Users\\DELL\\.gradle\\caches\\9.1.0\\transforms\\a90ccd9fe6cc5853ba24e8672ccbf024\\workspace\\transformed\\core-splashscreen-1.2.0\\res\\values-v31\\values-v31.xml",
                     "from": {
                         "startLines": "2,6,13",
                         "startColumns": "4,4,4",

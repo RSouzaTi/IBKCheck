@@ -16,4 +16,18 @@ interface LeituraDao {
 
     @Query("DELETE FROM leituras_table")
     suspend fun limparDadosDoTurno()
+
+    /**
+     * Busca o histórico de umidade para o gráfico de tendência.
+     * Usamos 'dataHoraMillis ASC' para que o gráfico desenhe da esquerda (antigo)
+     * para a direita (recente).
+     */
+    @Query("""
+        SELECT * FROM leituras_table 
+        WHERE idChave LIKE :estufaId || '%' 
+        AND idChave LIKE '%_umid' 
+        ORDER BY dataHoraMillis ASC 
+        LIMIT 7
+    """)
+    fun buscarHistoricoUmidade(estufaId: String): Flow<List<LeituraEntity>>
 }
