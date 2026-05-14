@@ -21,3 +21,4 @@ style Theme.App.Starting
 style Theme.IBKCheck
 xml backup_rules
 xml data_extraction_rules
+xml file_paths

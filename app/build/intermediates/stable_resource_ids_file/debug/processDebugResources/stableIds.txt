@@ -1,3 +1,4 @@
+br.com.ibk.check:xml/file_paths = 0x7f100002
 br.com.ibk.check:xml/backup_rules = 0x7f100000
 br.com.ibk.check:styleable/ViewBackgroundHelper = 0x7f0f0034
 br.com.ibk.check:styleable/SwitchCompat = 0x7f0f0030

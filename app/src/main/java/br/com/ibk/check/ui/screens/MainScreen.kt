@@ -15,7 +15,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -29,6 +28,13 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.pdf.PdfDocument
+import androidx.compose.ui.graphics.Color
+import java.io.File
+import java.io.FileOutputStream
+import androidx.core.graphics.toColorInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -91,6 +97,82 @@ fun MainScreen() {
             Estufa("11", "Estufa ES11"), Estufa("12", "Estufa ES12", unidadePressao = "MPa"),
             Estufa("13", "Estufa ES13"), Estufa("14", "Estufa ES14")
         )
+    }
+    fun criarRelatorioPdfIBK(
+        contexto: android.content.Context,
+        nome: String,
+        data: String,
+        horario: String,
+        estufas: List<Estufa>,
+        leituras: Map<String, String>
+    ): File? {
+        val pdfDocument = PdfDocument()
+        // Criamos uma página A4 (595 x 842 pontos)
+        val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create()
+        val page = pdfDocument.startPage(pageInfo)
+        val canvas: Canvas = page.canvas
+        val paint = Paint()
+
+        // 1. Cabeçalho
+        paint.color = "#435D56".toColorInt()
+        canvas.drawRect(0f, 0f, 595f, 100f, paint)
+
+        paint.color = android.graphics.Color.WHITE
+        paint.textSize = 24f
+        paint.isFakeBoldText = true
+        canvas.drawText("IBK CHECK - RELATÓRIO DE COLETA", 50f, 50f, paint)
+
+        paint.textSize = 12f
+        paint.isFakeBoldText = false
+        canvas.drawText("Indústria e Comércio de Madeiras", 50f, 75f, paint)
+
+        // 2. Informações Gerais
+        paint.color = android.graphics.Color.BLACK
+        paint.textSize = 12f
+        canvas.drawText("Caldeirista: ${nome.uppercase()}", 50f, 130f, paint)
+        canvas.drawText("Data: $data", 50f, 150f, paint)
+        canvas.drawText("Horário: $horario", 50f, 170f, paint)
+
+        // 3. Tabela de Medições
+        var yPos = 220f
+        paint.isFakeBoldText = true
+        canvas.drawText("ESTUFA", 50f, yPos, paint)
+        canvas.drawText("TEMP", 150f, yPos, paint)
+        canvas.drawText("UMID", 250f, yPos, paint)
+        canvas.drawText("STATUS", 350f, yPos, paint)
+
+        paint.isFakeBoldText = false
+        yPos += 10f
+        canvas.drawLine(50f, yPos, 545f, yPos, paint)
+        yPos += 25f
+
+        estufas.forEach { estufa ->
+            val prefix = "${estufa.id}_$horario"
+            val temp = leituras["${prefix}_temp"] ?: "--"
+            val umid = leituras["${prefix}_umid"] ?: "--"
+            val status = leituras["${prefix}_status"] ?: "OP"
+
+            canvas.drawText(estufa.nome, 50f, yPos, paint)
+            canvas.drawText("$temp°C", 150f, yPos, paint)
+            canvas.drawText("$umid%", 250f, yPos, paint)
+            canvas.drawText(status, 350f, yPos, paint)
+
+            yPos += 20f
+            // Se a página acabar, poderíamos criar outra, mas aqui cabe as 14
+        }
+
+        pdfDocument.finishPage(page)
+
+        // Gravar o ficheiro na pasta de cache para poder partilhar
+        val file = File(contexto.cacheDir, "Relatorio_IBK_${horario.replace(":", "")}.pdf")
+        try {
+            pdfDocument.writeTo(FileOutputStream(file))
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return null
+        }
+        pdfDocument.close()
+        return file
     }
 
     Scaffold(
@@ -160,7 +242,41 @@ fun MainScreen() {
                 ChecklistItem("7. Nível TBU ES04", tbuEs04Status, tbuEs04Obs, { tbuEs04Status = it }, { tbuEs04Obs = it })
 
                 Spacer(modifier = Modifier.height(24.dp))
-                Text("Medições das Estufas", style = MaterialTheme.typography.titleMedium, color = Color(0xFF435D56), fontWeight = FontWeight.Bold)
+                // --- AQUI ENTRA O GRÁFICO ---
+                Text(
+                    "Tendência de Umidade (Geral)",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color(0xFF435D56),
+                    fontWeight = FontWeight.Bold
+                )
+
+                Card(
+                    modifier = Modifier.padding(vertical = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            "Últimas 6 coletas (%)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.Gray
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Chamada do componente que criamos
+                        // Por enquanto com dados fixos para você ver o layout:
+                        val dadosTeste = listOf(15f, 14.5f, 13.2f, 12.8f, 11.5f, 10.2f)
+                        GraficoTendencia(dadosUmidade = dadosTeste)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    "Medições Individuais",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = Color.Gray
+                )
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             }
 

@@ -1,5 +1,9 @@
 [
     {
+        "merged": "br.com.ibk.check.app-debug-47:/xml_file_paths.xml.flat",
+        "source": "br.com.ibk.check.app-main-49:/xml/file_paths.xml"
+    },
+    {
         "merged": "br.com.ibk.check.app-debug-47:/mipmap-hdpi_ic_launcher_foreground.webp.flat",
         "source": "br.com.ibk.check.app-main-49:/mipmap-hdpi/ic_launcher_foreground.webp"
     },

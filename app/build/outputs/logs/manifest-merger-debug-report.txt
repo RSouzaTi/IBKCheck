@@ -1,9 +1,20 @@
 -- Merging decision tree log ---
+provider#androidx.core.content.FileProvider
+INJECTED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:14:9-22:20
+	android:grantUriPermissions
+		ADDED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:18:13-47
+	android:authorities
+		INJECTED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml
+		ADDED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:16:13-60
+	android:exported
+		ADDED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:17:13-37
+	android:name
+		ADDED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:15:13-62
 manifest
-ADDED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:2:1-25:12
-INJECTED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:2:1-25:12
-INJECTED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:2:1-25:12
-INJECTED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:2:1-25:12
+ADDED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:2:1-34:12
+INJECTED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:2:1-34:12
+INJECTED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:2:1-34:12
+INJECTED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:2:1-34:12
 MERGED from [com.patrykandpatrick.vico:compose-m3:1.13.0] C:\Users\DELL\.gradle\caches\9.1.0\transforms\9d8894c05bf8fa4eefebdc83ed9622cf\workspace\transformed\compose-m3-1.13.0\AndroidManifest.xml:2:1-7:12
 MERGED from [com.patrykandpatrick.vico:compose:1.13.0] C:\Users\DELL\.gradle\caches\9.1.0\transforms\4f67421bd8f418251ea5474029887442\workspace\transformed\compose-1.13.0\AndroidManifest.xml:2:1-7:12
 MERGED from [androidx.core:core-splashscreen:1.2.0] C:\Users\DELL\.gradle\caches\9.1.0\transforms\a90ccd9fe6cc5853ba24e8672ccbf024\workspace\transformed\core-splashscreen-1.2.0\AndroidManifest.xml:17:1-22:12
@@ -99,8 +110,8 @@ MERGED from [androidx.print:print:1.0.0] C:\Users\DELL\.gradle\caches\9.1.0\tran
 	xmlns:android
 		ADDED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:2:11-69
 application
-ADDED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:5:5-23:19
-INJECTED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:5:5-23:19
+ADDED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:5:5-32:19
+INJECTED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:5:5-32:19
 MERGED from [androidx.compose.ui:ui-tooling-android:1.10.6] C:\Users\DELL\.gradle\caches\9.1.0\transforms\3cde1a3d2bea5c2c205a01b79ea7a5f3\workspace\transformed\ui-tooling\AndroidManifest.xml:22:5-26:19
 MERGED from [androidx.compose.ui:ui-tooling-android:1.10.6] C:\Users\DELL\.gradle\caches\9.1.0\transforms\3cde1a3d2bea5c2c205a01b79ea7a5f3\workspace\transformed\ui-tooling\AndroidManifest.xml:22:5-26:19
 MERGED from [androidx.window:window:1.5.0] C:\Users\DELL\.gradle\caches\9.1.0\transforms\ff782da3122d15fa16b4277dc3f7831f\workspace\transformed\window-1.5.0\AndroidManifest.xml:22:5-29:19
@@ -142,23 +153,29 @@ MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\DE
 	android:dataExtractionRules
 		ADDED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:7:9-65
 activity#br.com.ibk.check.MainActivity
-ADDED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:14:9-22:20
+ADDED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:23:9-31:20
 	android:exported
-		ADDED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:16:13-36
+		ADDED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:25:13-36
 	android:theme
-		ADDED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:17:13-50
+		ADDED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:26:13-50
 	android:name
-		ADDED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:15:13-57
+		ADDED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:24:13-57
 intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
-ADDED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:18:13-21:29
+ADDED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:27:13-30:29
 action#android.intent.action.MAIN
-ADDED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:19:17-69
+ADDED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:28:17-69
 	android:name
-		ADDED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:19:25-66
+		ADDED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:28:25-66
 category#android.intent.category.LAUNCHER
-ADDED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:20:17-77
+ADDED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:29:17-77
 	android:name
-		ADDED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:20:27-74
+		ADDED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:29:27-74
+meta-data#android.support.FILE_PROVIDER_PATHS
+ADDED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:19:13-21:54
+	android:resource
+		ADDED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:21:17-51
+	android:name
+		ADDED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml:20:17-67
 uses-sdk
 INJECTED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from C:\Users\DELL\AndroidStudioProjects\IBKCheck\app\src\main\AndroidManifest.xml
