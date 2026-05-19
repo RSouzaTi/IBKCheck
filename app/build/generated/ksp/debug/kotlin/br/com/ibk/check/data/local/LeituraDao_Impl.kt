@@ -77,7 +77,7 @@ public class LeituraDao_Impl(
         |        WHERE idChave LIKE ? || '%' 
         |        AND idChave LIKE '%_umid' 
         |        ORDER BY dataHoraMillis ASC 
-        |        LIMIT 7
+        |        LIMIT 6
         |    
         """.trimMargin()
     return createFlow(__db, false, arrayOf("leituras_table")) { _connection ->

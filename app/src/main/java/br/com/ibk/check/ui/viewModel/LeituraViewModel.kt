@@ -11,7 +11,9 @@ class LeituraViewModel(private val dao: LeituraDao) : ViewModel() {
     // Transforma os dados brutos do banco em números para o gráfico
     fun obterDadosGrafico(estufaId: String): Flow<List<Float>> {
         return dao.buscarHistoricoUmidade(estufaId).map { lista ->
-            lista.map { it.valor.replace(",", ".").toFloatOrNull() ?: 0.0f }
+            lista.mapNotNull { 
+                it.valor.replace(",", ".").toFloatOrNull()
+            }
         }
     }
 

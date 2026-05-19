@@ -4,11 +4,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import br.com.ibk.check.model.Estufa
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -19,38 +21,50 @@ fun EstufaCard(
     valorPress: String,
     valorUmidade: String,
     valorTempo: String,
-    valorStatus: String, // Novo: Recebe o status atual (Operação, Troca, Manutenção)
+    valorStatus: String,
+    labelTempo: String,
     onTempChange: (String) -> Unit,
     onPressChange: (String) -> Unit,
     onUmidadeChange: (String) -> Unit,
     onTempoChange: (String) -> Unit,
-    onStatusChange: (String) -> Unit, // Novo: Função para mudar o status
-    labelTempo: String
+    onStatusChange: (String) -> Unit,
+    onVerGraficoClick: () -> Unit // 💡 Parâmetro de clique conectado com sucesso!
 ) {
-    // Definimos uma cor de fundo se não estiver em operação para ajudar o caldeirista visualmente
-    val corFundo = when (valorStatus) {
-        "Troca" -> Color(0xFFFFF9C4) // Amarelo claro
-        "Manutenção" -> Color(0xFFFFEBEE) // Vermelho claro
-        else -> MaterialTheme.colorScheme.surface
-    }
-
     Card(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        elevation = CardDefaults.cardElevation(4.dp),
-        colors = CardDefaults.cardColors(containerColor = corFundo)
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(text = estufa.nome, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
 
-                // Exibe um selo de Status se não estiver em operação
-                if (valorStatus != "Operação") {
-                    Text(text = valorStatus.uppercase(), color = Color.Red, fontWeight = FontWeight.ExtraBold)
+            // --- CABEÇALHO DO CARD COM O BOTÃO NOVO ---
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = estufa.nome,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color(0xFF435D56),
+                    fontWeight = FontWeight.Bold
+                )
+
+                // 💡 Botão discreto posicionado ao lado do título da estufa
+                TextButton(onClick = onVerGraficoClick) {
+                    Text("📊 Ver Gráfico", fontSize = 12.sp)
                 }
             }
 
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
             // --- SELETOR DE STATUS (Botões rápidos) ---
-            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
                 val opcoes = listOf("Operação", "Troca", "Manutenção")
                 opcoes.forEach { opcao ->
                     InputChip(
@@ -73,14 +87,20 @@ fun EstufaCard(
                         onValueChange = onTempChange,
                         label = { Text("Temp °C") },
                         modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            autoCorrectEnabled = false
+                        )
                     )
                     OutlinedTextField(
                         value = valorPress,
                         onValueChange = onPressChange,
                         label = { Text(estufa.unidadePressao) },
                         modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            autoCorrectEnabled = false
+                        )
                     )
                 }
 
@@ -90,7 +110,10 @@ fun EstufaCard(
                         onValueChange = onUmidadeChange,
                         label = { Text("Umidade %") },
                         modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            autoCorrectEnabled = false
+                        )
                     )
                     OutlinedTextField(
                         value = valorTempo,
@@ -98,13 +121,16 @@ fun EstufaCard(
                         label = { Text(labelTempo) },
                         placeholder = { Text("Ex: 345:23") },
                         modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Text,
+                            autoCorrectEnabled = false
+                        )
                     )
                 }
             } else {
-                // Mensagem quando a estufa está parada
+                // Mensagem limpa quando a estufa está em troca de lote ou manutenção
                 Text(
-                    text = "Estufa está em modo: $valorStatus. Campos de medição ocultos.",
+                    text = "Estufa está em modo: ${valorStatus.uppercase()}. Campos de medição ocultos.",
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(top = 8.dp),
                     color = Color.Gray

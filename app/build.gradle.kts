@@ -1,3 +1,6 @@
+import com.android.build.api.dsl.ApplicationExtension
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,7 +8,8 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
-android {
+
+extensions.configure<ApplicationExtension>("android") {
     namespace = "br.com.ibk.check"
     compileSdk = 36
 
@@ -33,12 +37,14 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-
     buildFeatures {
         compose = true
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
     }
 }
 
@@ -49,7 +55,6 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.lifecycle.viewmodel.compose.v280)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
@@ -59,9 +64,6 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.appcompat)
-    implementation("com.patrykandpatrick.vico:compose:1.13.0")
-    implementation("com.patrykandpatrick.vico:compose-m3:1.13.0")
-    implementation("com.patrykandpatrick.vico:core:1.13.0")
     implementation(libs.compose)
     implementation(libs.compose.m3)
     implementation(libs.core)

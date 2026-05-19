@@ -3,6 +3,7 @@ package br.com.ibk.check.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -14,8 +15,24 @@ import com.patrykandpatrick.vico.core.entry.entryModelOf
 
 @Composable
 fun GraficoTendencia(dadosUmidade: List<Float>) {
-    // Mentor: Criamos o modelo de dados que o Vico entende
-    val model = entryModelOf(*dadosUmidade.toTypedArray())
+    if (dadosUmidade.isEmpty()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(180.dp)
+                .background(Color.White)
+                .padding(8.dp),
+            contentAlignment = androidx.compose.ui.Alignment.Center
+        ) {
+            androidx.compose.material3.Text("Sem dados para o gráfico", color = Color.Gray)
+        }
+        return
+    }
+
+    // Mentor: Criamos o modelo de dados que o Vico entende e lembramos dele
+    val model = remember(dadosUmidade) {
+        entryModelOf(*dadosUmidade.toTypedArray())
+    }
 
     Box(
         modifier = Modifier

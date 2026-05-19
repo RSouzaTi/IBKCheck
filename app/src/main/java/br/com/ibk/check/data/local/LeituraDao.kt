@@ -1,4 +1,4 @@
-package br.com.ibk.check.data.local // Verifique se o package bate com sua pasta
+package br.com.ibk.check.data.local
 
 import androidx.room.Dao
 import androidx.room.Insert
@@ -19,15 +19,14 @@ interface LeituraDao {
 
     /**
      * Busca o histórico de umidade para o gráfico de tendência.
-     * Usamos 'dataHoraMillis ASC' para que o gráfico desenhe da esquerda (antigo)
-     * para a direita (recente).
+     * Modificado para LIMIT 6 para exibir exatamente as últimas 6 coletas.
      */
     @Query("""
         SELECT * FROM leituras_table 
         WHERE idChave LIKE :estufaId || '%' 
         AND idChave LIKE '%_umid' 
         ORDER BY dataHoraMillis ASC 
-        LIMIT 7
+        LIMIT 6
     """)
     fun buscarHistoricoUmidade(estufaId: String): Flow<List<LeituraEntity>>
 }
