@@ -32,7 +32,7 @@ public class AppDatabase_Impl : AppDatabase() {
   }
 
   protected override fun createOpenDelegate(): RoomOpenDelegate {
-    val _openDelegate: RoomOpenDelegate = object : RoomOpenDelegate(1, "fe1514336de698676cbbb5350c6c314e", "81b5169195d3bdb882e59b1a1413f330") {
+    val _openDelegate: RoomOpenDelegate = object : RoomOpenDelegate(2, "fe1514336de698676cbbb5350c6c314e", "81b5169195d3bdb882e59b1a1413f330") {
       public override fun createAllTables(connection: SQLiteConnection) {
         connection.execSQL("CREATE TABLE IF NOT EXISTS `leituras_table` (`idChave` TEXT NOT NULL, `valor` TEXT NOT NULL, `dataHoraMillis` INTEGER NOT NULL, PRIMARY KEY(`idChave`))")
         connection.execSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)")

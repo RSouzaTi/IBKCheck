@@ -3,7 +3,7 @@ package br.com.ibk.check.ui.components
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,18 +28,25 @@ fun EstufaCard(
     onUmidadeChange: (String) -> Unit,
     onTempoChange: (String) -> Unit,
     onStatusChange: (String) -> Unit,
-    onVerGraficoClick: () -> Unit // 💡 Parâmetro de clique conectado com sucesso!
+    onVerGraficoClick: () -> Unit
 ) {
+    // 💡 Recupera a cor de fundo dinamicamente baseada no status da estufa
+    val corFundoCard = when (valorStatus) {
+        "Manutenção" -> Color(0xFFFEEBEE) // Vermelho bem claro/suave para manutenção
+        "Troca" -> Color(0xFFE8F5E9)       // Verde claro para troca de lote
+        else -> CardDefaults.cardColors().containerColor // Segue o padrão do sistema (Light/Dark Mode)
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = corFundoCard),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
 
-            // --- CABEÇALHO DO CARD COM O BOTÃO NOVO ---
+            // --- CABEÇALHO DO CARD ---
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -48,11 +55,9 @@ fun EstufaCard(
                 Text(
                     text = estufa.nome,
                     style = MaterialTheme.typography.titleMedium,
-                    color = Color(0xFF435D56),
                     fontWeight = FontWeight.Bold
                 )
 
-                // 💡 Botão discreto posicionado ao lado do título da estufa
                 TextButton(onClick = onVerGraficoClick) {
                     Text("📊 Ver Gráfico", fontSize = 12.sp)
                 }
@@ -60,7 +65,7 @@ fun EstufaCard(
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-            // --- SELETOR DE STATUS (Botões rápidos) ---
+            // --- SELETOR DE STATUS ---
             Row(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -70,11 +75,7 @@ fun EstufaCard(
                     InputChip(
                         selected = valorStatus == opcao,
                         onClick = { onStatusChange(opcao) },
-                        label = { Text(opcao, style = MaterialTheme.typography.bodySmall) },
-                        colors = InputChipDefaults.inputChipColors(
-                            selectedContainerColor = Color(0xFF435D56),
-                            selectedLabelColor = Color.White
-                        )
+                        label = { Text(opcao, style = MaterialTheme.typography.bodySmall) }
                     )
                 }
             }
@@ -87,20 +88,14 @@ fun EstufaCard(
                         onValueChange = onTempChange,
                         label = { Text("Temp °C") },
                         modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number,
-                            autoCorrectEnabled = false
-                        )
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, autoCorrectEnabled = false)
                     )
                     OutlinedTextField(
                         value = valorPress,
                         onValueChange = onPressChange,
                         label = { Text(estufa.unidadePressao) },
                         modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number,
-                            autoCorrectEnabled = false
-                        )
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, autoCorrectEnabled = false)
                     )
                 }
 
@@ -110,10 +105,7 @@ fun EstufaCard(
                         onValueChange = onUmidadeChange,
                         label = { Text("Umidade %") },
                         modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number,
-                            autoCorrectEnabled = false
-                        )
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, autoCorrectEnabled = false)
                     )
                     OutlinedTextField(
                         value = valorTempo,
@@ -121,19 +113,15 @@ fun EstufaCard(
                         label = { Text(labelTempo) },
                         placeholder = { Text("Ex: 345:23") },
                         modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Text,
-                            autoCorrectEnabled = false
-                        )
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, autoCorrectEnabled = false)
                     )
                 }
             } else {
-                // Mensagem limpa quando a estufa está em troca de lote ou manutenção
                 Text(
-                    text = "Estufa está em modo: ${valorStatus.uppercase()}. Campos de medição ocultos.",
-                    style = MaterialTheme.typography.bodySmall,
+                    text = "Estufa parada para $valorStatus. Medições suspensas.",
+                    style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = 8.dp),
-                    color = Color.Gray
+                    fontWeight = FontWeight.Medium
                 )
             }
         }

@@ -65,7 +65,6 @@ import br.com.ibk.check.ui.components.GraficoBarrasEstufa
 import br.com.ibk.check.ui.components.IBKTopAppBar
 import br.com.ibk.check.ui.viewModel.LeituraViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
@@ -83,7 +82,7 @@ fun MainScreen() {
     // --- 1. CONEXÃO COM O VIEWMODEL E DAO ---
     val db = remember { AppDatabase.getDatabase(contexto) }
     val dao = remember { db.leituraDao() }
-    val viewModel: LeituraViewModel = viewModel(factory = LeituraViewModel.Factory(dao))
+    viewModel(factory = LeituraViewModel.Factory(dao))
     var nomeCaldeirista by remember { mutableStateOf("") }
     val leiturasEstufas = remember { mutableStateMapOf<String, String>() }
     val dadosDoBanco by dao.buscarTodasLeituras().collectAsState(initial = emptyList())
@@ -152,110 +151,167 @@ fun MainScreen() {
         contexto: Context,
         nome: String,
         data: String,
-        horario: String,
-        nomeEstufa: String,
-        historicoUmidade: List<LeituraEntity> // 💡 Agora o PDF recebe o histórico de coletas para desenhar o gráfico
+        listaEstufas: List<Estufa>,
+        leiturasEstufas: Map<String, String>
     ): File? {
         val pdfDocument = PdfDocument()
-        // Tamanho A4 padrão (595 x 842 pontos)
-        val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create()
+        // Folha A4 em modo Paisagem (Deitada): Largura 842 x Altura 595
+        val pageInfo = PdfDocument.PageInfo.Builder(842, 595, 1).create()
         val page = pdfDocument.startPage(pageInfo)
         val canvas: Canvas = page.canvas
         val paint = Paint()
 
         // 1. Cabeçalho Corporativo
         paint.color = "#435D56".toColorInt()
-        canvas.drawRect(0f, 0f, 595f, 100f, paint)
+        canvas.drawRect(0f, 0f, 842f, 90f, paint)
 
         paint.color = android.graphics.Color.WHITE
-        paint.textSize = 20f
+        paint.textSize = 22f
         paint.isFakeBoldText = true
-        canvas.drawText("IBK CHECK - GRÁFICO DE TENDÊNCIA", 40f, 45f, paint)
+        canvas.drawText("IBK CHECK - HISTÓRICO GERAL DE UMIDADE", 40f, 40f, paint)
 
         paint.textSize = 11f
         paint.isFakeBoldText = false
-        canvas.drawText("Indústria e Comércio de Madeiras", 40f, 70f, paint)
+        canvas.drawText("Painel Monitorado com Alertas Dinâmicos de Processo", 40f, 65f, paint)
 
-        // 2. Informações Gerais
+        // 2. Informações Gerais do Turno
         paint.color = android.graphics.Color.BLACK
         paint.textSize = 11f
-        paint.isFakeBoldText = true
-        canvas.drawText("INFORMAÇÕES DO TURNO", 40f, 130f, paint)
+        canvas.drawText("Caldeirista: ${nome.uppercase()}", 40f, 120f, paint)
+        canvas.drawText("Data: $data", 300f, 120f, paint)
 
-        paint.isFakeBoldText = false
-        canvas.drawText("Caldeirista: ${nome.uppercase()}", 40f, 150f, paint)
-        canvas.drawText("Data: $data", 240f, 150f, paint)
-        canvas.drawText("Horário do Relatório: $horario", 410f, 150f, paint)
-
-        // Linha divisória
         paint.color = android.graphics.Color.LTGRAY
-        canvas.drawLine(40f, 165f, 555f, 165f, paint)
+        canvas.drawLine(40f, 135f, 802f, 135f, paint)
 
-        // 3. Título do Gráfico da Estufa
-        paint.color = android.graphics.Color.BLACK
-        paint.isFakeBoldText = true
-        paint.textSize = 14f
-        canvas.drawText("Histórico de Umidade - $nomeEstufa", 40f, 200f, paint)
+        // 💡 3. RECALIBRAÇÃO DE COORDENADAS PARA CABER AS 14 ESTUFAS COMPLETA
+        val xInicio = 50f                // Recuado ligeiramente para a esquerda para abrir espaço
+        val yBaseGrafico = 480f
+        val alturaMaximaGrafico = 240f
+        val listaHorarios = listOf("06:30", "08:30", "10:30", "12:30", "14:30", "16:30")
 
-        // --- DESENHO DO GRÁFICO DE BARRAS NATIVO NO PDF ---
-        if (historicoUmidade.isEmpty()) {
-            paint.isFakeBoldText = false
-            paint.textSize = 12f
+        val larguraBarraIndividual = 4.5f // Ajuste fino milimétrico na espessura
+        val espacoEntreHorarios = 0.8f    // Compactado sutilmente para não estourar
+        val espacoEntreEstufas = 11f      // Espaço entre blocos reduzido para caber de 1 a 14
+
+        // 4. IMPLEMENTAÇÃO DA GRADE DE FUNDO (LINHAS GUIA HORIZONTAIS)
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = 0.5f
+        paint.isFakeBoldText = false
+        paint.textSize = 8f
+
+        val porcentagensGrade = listOf(20, 40, 60, 80, 100)
+        porcentagensGrade.forEach { pct ->
+            val yGrade = yBaseGrafico - ((pct / 100f) * alturaMaximaGrafico)
+            paint.color = "#E0E0E0".toColorInt()
+            canvas.drawLine(40f, yGrade, 802f, yGrade, paint)
+
             paint.color = android.graphics.Color.GRAY
-            canvas.drawText("Nenhum dado de umidade encontrado para esta estufa.", 40f, 250f, paint)
-        } else {
-            val xInicio = 60f
-            val yBaseGrafico = 450f // Linha de fundo do gráfico
-            val alturaMaximaGrafico = 180f
-            val espacoEntreBarras = 30f
-            val larguraBarra = 50f
-
-            historicoUmidade.forEachIndexed { indice, leitura ->
-                // Trata o valor para extrair apenas os números
-                val apenasNumeros = leitura.valor.filter { it.isDigit() || it == '.' || it == ',' }
-                val umidade = apenasNumeros.replace(",", ".").toFloatOrNull() ?: 0f
-
-                // Extrai o horário da chave (Ex: de "1_08:30_umid" extrai "08:30")
-                val partes = leitura.idChave.split("_")
-                val horarioColeta = if (partes.size >= 2) partes[1] else "--:--"
-
-                // Calcula a altura proporcional da barra (baseado em 100% de umidade)
-                val alturaBarra = (umidade / 100f) * alturaMaximaGrafico
-
-                val xBarra = xInicio + indice * (larguraBarra + espacoEntreBarras)
-                val yBarraTop = yBaseGrafico - alturaBarra
-
-                // 1. Desenha a Barra Verde da IBK
-                paint.color = "#435D56".toColorInt()
-                paint.style = Paint.Style.FILL
-                canvas.drawRect(xBarra, yBarraTop, xBarra + larguraBarra, yBaseGrafico, paint)
-
-                // 2. Desenha o Valor da Umidade (Texto acima da barra)
-                paint.color = android.graphics.Color.DKGRAY
-                paint.textSize = 11f
-                paint.isFakeBoldText = true
-                canvas.drawText("${umidade.toInt()}%", xBarra + (larguraBarra / 6), yBarraTop - 8f, paint)
-
-                // 3. Desenha o Horário (Texto abaixo da barra)
-                paint.color = android.graphics.Color.GRAY
-                paint.textSize = 10f
-                paint.isFakeBoldText = false
-                canvas.drawText(horarioColeta, xBarra + (larguraBarra / 8), yBaseGrafico + 18f, paint)
-            }
-
-            // Desenha a linha horizontal do eixo X (base do gráfico)
-            paint.color = android.graphics.Color.GRAY
-            canvas.drawLine(40f, yBaseGrafico, 555f, yBaseGrafico, paint)
+            paint.style = Paint.Style.FILL
+            canvas.drawText("$pct%", 18f, yGrade + 3f, paint)
         }
 
-        // Rodapé de encerramento
+        // Restaura o estilo de preenchimento para as barras
+        paint.style = Paint.Style.FILL
+
+        // 5. DESENHO DAS BARRAS
+        listaEstufas.forEachIndexed { indiceEstufa, estufa ->
+            val larguraBlocoEstufa = (larguraBarraIndividual + espacoEntreHorarios) * listaHorarios.size
+            val xBlocoInicio = xInicio + indiceEstufa * (larguraBlocoEstufa + espacoEntreEstufas)
+
+            listaHorarios.forEachIndexed { indiceHorario, horario ->
+                val prefix = "${estufa.id}_$horario"
+                val status = leiturasEstufas["${prefix}_status"] ?: "Operação"
+                val xBarra = xBlocoInicio + indiceHorario * (larguraBarraIndividual + espacoEntreHorarios)
+
+                if (status == "Operação") {
+                    val umidadeTexto = leiturasEstufas["${prefix}_umid"] ?: ""
+                    val apenasNumeros = umidadeTexto.replace(",", ".")
+                    val umidade = apenasNumeros.toFloatOrNull() ?: 0f
+
+                    if (umidade > 0f) {
+                        val alturaBarra = (umidade / 100f) * alturaMaximaGrafico
+                        val yBarraTop = yBaseGrafico - alturaBarra
+
+                        val corBarra = when {
+                            umidade <= 15f -> "#435D56" // Verde IBK
+                            umidade <= 25f -> "#FBC02D" // Amarelo
+                            else -> "#D32F2F"           // Vermelho
+                        }
+
+                        paint.color = corBarra.toColorInt()
+                        canvas.drawRect(xBarra, yBarraTop, xBarra + larguraBarraIndividual, yBaseGrafico, paint)
+
+                        // Mostra o valor numérico acima da barra no fechamento ou em picos críticos
+                        if (horario == "16:30" || umidade > 25f) {
+                            paint.color = android.graphics.Color.DKGRAY
+                            paint.textSize = 7f
+                            paint.isFakeBoldText = true
+                            canvas.drawText("${umidade.toInt()}%", xBarra - 2f, yBarraTop - 5f, paint)
+                        }
+                    }
+                }
+            }
+
+            // LINHA DIVISÓRIA VERTICAL SUAVE
+            paint.color = "#F0F0F0".toColorInt()
+            paint.strokeWidth = 1f
+            val xDivisoria = xBlocoInicio + larguraBlocoEstufa + (espacoEntreEstufas / 2)
+            if (indiceEstufa < listaEstufas.size - 1) {
+                canvas.drawLine(xDivisoria, yBaseGrafico - alturaMaximaGrafico, xDivisoria, yBaseGrafico + 25f, paint)
+            }
+
+            // Nome da Estufa Corrigido (Se o nome for longo como "Estufa 01", reduz para "ES01")
+            paint.color = android.graphics.Color.BLACK
+            paint.textSize = 8.5f
+            paint.isFakeBoldText = true
+            val nomeCurto = estufa.nome.replace("Estufa ", "ES")
+            canvas.drawText(nomeCurto, xBlocoInicio + 2f, yBaseGrafico + 18f, paint)
+        }
+
+        // Desenha a linha firme do chão do gráfico (Eixo X)
         paint.color = android.graphics.Color.GRAY
+        paint.strokeWidth = 2f
+        canvas.drawLine(40f, yBaseGrafico, 802f, yBaseGrafico, paint)
+
+        // 6. LEGENDA DE STATUS DE COR E HORÁRIOS
+        var xLegenda = 40f
         paint.textSize = 9f
-        canvas.drawText("Documento de tendência gerado via IBK Check App em ${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())}", 40f, 800f, paint)
+        paint.isFakeBoldText = true
+        canvas.drawText("FAIXAS DE PROCESSO:", xLegenda, 525f, paint)
+
+        xLegenda += 120f
+        paint.color = "#435D56".toColorInt()
+        canvas.drawRect(xLegenda, 516f, xLegenda + 12f, 526f, paint)
+        paint.color = android.graphics.Color.BLACK
+        paint.isFakeBoldText = false
+        canvas.drawText("Até 15% (Ideal)", xLegenda + 16f, 525f, paint)
+
+        xLegenda += 110f
+        paint.color = "#FBC02D".toColorInt()
+        canvas.drawRect(xLegenda, 516f, xLegenda + 12f, 526f, paint)
+        paint.color = android.graphics.Color.BLACK
+        canvas.drawText("16% a 25% (Atenção)", xLegenda + 16f, 525f, paint)
+
+        xLegenda += 130f
+        paint.color = "#D32F2F".toColorInt()
+        canvas.drawRect(xLegenda, 516f, xLegenda + 12f, 526f, paint)
+        paint.color = android.graphics.Color.BLACK
+        canvas.drawText("> 25% (Crítico)", xLegenda + 16f, 525f, paint)
+
+        paint.color = android.graphics.Color.DKGRAY
+        paint.textSize = 8.5f
+        paint.isFakeBoldText = true
+        canvas.drawText("Ordem Cronológica das Barras (Esquerda para Direita):  06:30  ➔  08:30  ➔  10:30  ➔  12:30  ➔  14:30  ➔  16:30", 40f, 550f, paint)
+
+        // Rodapé padrão
+        paint.color = android.graphics.Color.GRAY
+        paint.textSize = 8f
+        paint.isFakeBoldText = false
+        canvas.drawText("Relatório gerado via IBK Check App em ${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())}", 40f, 575f, paint)
 
         pdfDocument.finishPage(page)
 
-        val file = File(contexto.cacheDir, "Grafico_IBK_${horario.replace(":", "")}.pdf")
+        val file = File(contexto.cacheDir, "Grafico_Historico_Turno.pdf")
         return try {
             pdfDocument.writeTo(FileOutputStream(file))
             pdfDocument.close()
@@ -434,14 +490,22 @@ fun MainScreen() {
 
     // --- DIÁLOGO DO GRÁFICO INDIVIDUAL DA ESTUFA (CARD) ---
     if (estufaSelecionadaParaGrafico != null) {
-        val historicoUmidade by dao.buscarHistoricoUmidade(estufaSelecionadaParaGrafico!!.id)
-            .collectAsState(initial = emptyList())
+        // 💡 CORREÇÃO: lançamos um LaunchedEffect para buscar os dados uma vez sempre que a estufa mudar,
+        // evitando que o collectAsState trave a renderização do botão Fechar.
+        var historicoUmidadeLocal by remember { mutableStateOf<List<LeituraEntity>>(emptyList()) }
+
+        LaunchedEffect(estufaSelecionadaParaGrafico) {
+            dao.buscarHistoricoUmidade(estufaSelecionadaParaGrafico!!.id).collect { lista ->
+                historicoUmidadeLocal = lista
+            }
+        }
 
         AlertDialog(
-            onDismissRequest = { },
+            onDismissRequest = { estufaSelecionadaParaGrafico = null },
             confirmButton = {
                 TextButton(
                     onClick = {
+                        // 💡 Limpa o estado imediatamente na thread principal, destravando o fechamento
                         estufaSelecionadaParaGrafico = null
                     }
                 ) {
@@ -465,7 +529,8 @@ fun MainScreen() {
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
 
-                    GraficoBarrasEstufa(historico = historicoUmidade)
+                    // Passa a lista segura e local para o gráfico
+                    GraficoBarrasEstufa(historico = historicoUmidadeLocal)
                 }
             }
         )
@@ -493,51 +558,37 @@ fun MainScreen() {
                             )
 
                             compartilharRelatorioTexto(contexto, relatorioTexto)
-                            mostrarDialogoRelatorio = false
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("1. Enviar Checklist no WhatsApp")
                     }
-
-                    // BOTÃO 2: Gera e compartilha o PDF com o Gráfico de Barras
+                    // BOTÃO 2: Gera e compartilha o PDF Geral com todas as rodadas históricas
                     Button(
                         onClick = {
                             val dataAtual = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
-                            val estufaAlvo = listaEstufas.firstOrNull()
 
-                            coroutineScope.launch(Dispatchers.IO) {
-                                try {
-                                    val historico = dao.buscarHistoricoUmidade(estufaAlvo?.id ?: "1").first()
+                            // 💡 Chama a função passando o mapa de leituras bruto com todos os horários salvos
+                            val arquivoPdf = criarRelatorioPdfIBK(
+                                contexto = contexto,
+                                nome = nomeCaldeirista,
+                                data = dataAtual,
+                                listaEstufas = listaEstufas,
+                                leiturasEstufas = leiturasEstufas
+                            )
 
-                                    launch(Dispatchers.Main) {
-                                        val arquivoPdf = criarRelatorioPdfIBK(
-                                            contexto = contexto,
-                                            nome = nomeCaldeirista,
-                                            data = dataAtual,
-                                            horario = horarioSelecionado,
-                                            nomeEstufa = estufaAlvo?.nome ?: "Estufa 01",
-                                            historicoUmidade = historico
-                                        )
-
-                                        if (arquivoPdf != null && arquivoPdf.exists()) {
-                                            compartilharApenasPdf(contexto, arquivoPdf)
-                                        } else {
-                                            Toast.makeText(contexto, "Erro ao gerar o PDF do Gráfico.", Toast.LENGTH_LONG).show()
-                                        }
-                                        mostrarDialogoRelatorio = false
-                                    }
-                                } catch (_: Exception) {
-                                    launch(Dispatchers.Main) {
-                                        Toast.makeText(contexto, "Erro ao acessar o banco de dados.", Toast.LENGTH_LONG).show()
-                                    }
-                                }
+                            if (arquivoPdf != null && arquivoPdf.exists()) {
+                                compartilharApenasPdf(contexto, arquivoPdf)
+                            } else {
+                                Toast.makeText(contexto, "Erro ao gerar o PDF Histórico.", Toast.LENGTH_LONG).show()
                             }
+
+                            mostrarDialogoRelatorio = false
                         },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF435D56))
                     ) {
-                        Text("2. Gerar PDF do Gráfico")
+                        Text("2. Gerar PDF do Gráfico Geral (Todas as Coletas)")
                     }
                 }
             },
@@ -563,8 +614,7 @@ fun MainScreen() {
                                 leiturasEstufas.clear()
                                 pressaoCompressor = ""; damperStatus = ""; damperObs = ""; vazamentoStatus = ""; vazamentoObs = ""
                                 nivelCaixaStatus = ""; bombaPocoStatus = ""
-                                tbuEs03Status = ""; tbuEs03Obs = ""; tbuEs04Status = ""; tbuEs04Obs = ""
-                                mostrarDialogoReset = false
+                                tbuEs03Status = ""; tbuEs04Status = ""; tbuEs04Obs = ""
                             }
                         }
                     },
@@ -574,7 +624,7 @@ fun MainScreen() {
                 }
             },
             dismissButton = {
-                TextButton(onClick = { mostrarDialogoReset = false }) {
+                TextButton(onClick = { }) {
                     Text("Cancelar")
                 }
             },
