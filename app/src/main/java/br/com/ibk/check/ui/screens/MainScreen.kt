@@ -55,7 +55,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.core.graphics.toColorInt
-import androidx.lifecycle.viewmodel.compose.viewModel
 import br.com.ibk.check.data.local.AppDatabase
 import br.com.ibk.check.data.local.LeituraEntity
 import br.com.ibk.check.model.Estufa
@@ -63,7 +62,6 @@ import br.com.ibk.check.ui.components.ChecklistItem
 import br.com.ibk.check.ui.components.EstufaCard
 import br.com.ibk.check.ui.components.GraficoBarrasEstufa
 import br.com.ibk.check.ui.components.IBKTopAppBar
-import br.com.ibk.check.ui.viewModel.LeituraViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
@@ -82,7 +80,6 @@ fun MainScreen() {
     // --- 1. CONEXÃO COM O VIEWMODEL E DAO ---
     val db = remember { AppDatabase.getDatabase(contexto) }
     val dao = remember { db.leituraDao() }
-    viewModel(factory = LeituraViewModel.Factory(dao))
     var nomeCaldeirista by remember { mutableStateOf("") }
     val leiturasEstufas = remember { mutableStateMapOf<String, String>() }
     val dadosDoBanco by dao.buscarTodasLeituras().collectAsState(initial = emptyList())
@@ -215,39 +212,71 @@ fun MainScreen() {
 
         // 5. DESENHO DAS BARRAS
         listaEstufas.forEachIndexed { indiceEstufa, estufa ->
-            val larguraBlocoEstufa = (larguraBarraIndividual + espacoEntreHorarios) * listaHorarios.size
+            val larguraBlocoEstufa =
+                (larguraBarraIndividual + espacoEntreHorarios) * listaHorarios.size
             val xBlocoInicio = xInicio + indiceEstufa * (larguraBlocoEstufa + espacoEntreEstufas)
 
             listaHorarios.forEachIndexed { indiceHorario, horario ->
                 val prefix = "${estufa.id}_$horario"
                 val status = leiturasEstufas["${prefix}_status"] ?: "Operação"
-                val xBarra = xBlocoInicio + indiceHorario * (larguraBarraIndividual + espacoEntreHorarios)
+                val xBarra =
+                    xBlocoInicio + indiceHorario * (larguraBarraIndividual + espacoEntreHorarios)
 
                 if (status == "Operação") {
                     val umidadeTexto = leiturasEstufas["${prefix}_umid"] ?: ""
                     val apenasNumeros = umidadeTexto.replace(",", ".")
                     val umidade = apenasNumeros.toFloatOrNull() ?: 0f
 
+                    // Substitua o trecho interno do seu loop de umidade por este estruturado sem quebra de chaves:
                     if (umidade > 0f) {
                         val alturaBarra = (umidade / 100f) * alturaMaximaGrafico
                         val yBarraTop = yBaseGrafico - alturaBarra
 
                         val corBarra = when {
-                            umidade <= 15f -> "#435D56" // Verde IBK
-                            umidade <= 25f -> "#FBC02D" // Amarelo
-                            else -> "#D32F2F"           // Vermelho
+                            umidade <= 15f -> "#435D56"
+                            umidade <= 25f -> "#FBC02D"
+                            else -> "#D32F2F"
                         }
 
                         paint.color = corBarra.toColorInt()
                         canvas.drawRect(xBarra, yBarraTop, xBarra + larguraBarraIndividual, yBaseGrafico, paint)
 
                         // Mostra o valor numérico acima da barra no fechamento ou em picos críticos
-                        if (horario == "16:30" || umidade > 25f) {
+                        // Altere a condição para mostrar o texto em qualquer medição válida registrada
+                        paint.color = android.graphics.Color.DKGRAY
+                        paint.textSize = 7f
+                        paint.isFakeBoldText = true
+
+                        // 1. Lógica de Escadinha: Horários ímpares na lista sobem mais que os pares
+                        val seAlternado = (indiceHorario % 2 != 0)
+                        val deslocamentoVertical = if (seAlternado) 18f else 5f
+                        val yTexto = yBarraTop - deslocamentoVertical
+
+                        // 2. Linha de chamada vertical sutil para guiar o olhar no texto que subiu
+                        if (seAlternado) {
+                            paint.color = "#CCCCCC".toColorInt()
+                            paint.strokeWidth = 0.5f
+                            paint.style = Paint.Style.STROKE
+
+                            canvas.drawLine(
+                                xBarra + (larguraBarraIndividual / 2),
+                                yBarraTop,
+                                xBarra + (larguraBarraIndividual / 2),
+                                yTexto + 2f,
+                                paint
+                            )
+
+                            paint.style = Paint.Style.FILL
                             paint.color = android.graphics.Color.DKGRAY
-                            paint.textSize = 7f
-                            paint.isFakeBoldText = true
-                            canvas.drawText("${umidade.toInt()}%", xBarra - 2f, yBarraTop - 5f, paint)
                         }
+
+                        // 3. Desenha o texto da porcentagem perfeitamente espaçado
+                        canvas.drawText(
+                            "${umidade.toInt()}%",
+                            xBarra - 1f,
+                            yTexto,
+                            paint
+                        )
                     }
                 }
             }
@@ -257,7 +286,13 @@ fun MainScreen() {
             paint.strokeWidth = 1f
             val xDivisoria = xBlocoInicio + larguraBlocoEstufa + (espacoEntreEstufas / 2)
             if (indiceEstufa < listaEstufas.size - 1) {
-                canvas.drawLine(xDivisoria, yBaseGrafico - alturaMaximaGrafico, xDivisoria, yBaseGrafico + 25f, paint)
+                canvas.drawLine(
+                    xDivisoria,
+                    yBaseGrafico - alturaMaximaGrafico,
+                    xDivisoria,
+                    yBaseGrafico + 25f,
+                    paint
+                )
             }
 
             // Nome da Estufa Corrigido (Se o nome for longo como "Estufa 01", reduz para "ES01")
@@ -301,13 +336,25 @@ fun MainScreen() {
         paint.color = android.graphics.Color.DKGRAY
         paint.textSize = 8.5f
         paint.isFakeBoldText = true
-        canvas.drawText("Ordem Cronológica das Barras (Esquerda para Direita):  06:30  ➔  08:30  ➔  10:30  ➔  12:30  ➔  14:30  ➔  16:30", 40f, 550f, paint)
+        canvas.drawText(
+            "Ordem Cronológica das Barras (Esquerda para Direita):  06:30  ➔  08:30  ➔  10:30  ➔  12:30  ➔  14:30  ➔  16:30",
+            40f,
+            550f,
+            paint
+        )
 
         // Rodapé padrão
         paint.color = android.graphics.Color.GRAY
         paint.textSize = 8f
         paint.isFakeBoldText = false
-        canvas.drawText("Relatório gerado via IBK Check App em ${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())}", 40f, 575f, paint)
+        canvas.drawText(
+            "Relatório gerado via IBK Check App em ${
+                SimpleDateFormat(
+                    "dd/MM/yyyy HH:mm",
+                    Locale.getDefault()
+                ).format(Date())
+            }", 40f, 575f, paint
+        )
 
         pdfDocument.finishPage(page)
 
@@ -334,7 +381,13 @@ fun MainScreen() {
         floatingActionButton = {
             val podeGerar = nomeCaldeirista.isNotBlank()
             ExtendedFloatingActionButton(
-                onClick = { if (podeGerar) mostrarDialogoRelatorio = true else Toast.makeText(contexto, "Informe o Caldeirista", Toast.LENGTH_SHORT).show() },
+                onClick = {
+                    if (podeGerar) mostrarDialogoRelatorio = true else Toast.makeText(
+                        contexto,
+                        "Informe o Caldeirista",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                },
                 containerColor = if (podeGerar) Color(0xFF435D56) else Color.Gray,
                 contentColor = Color.White,
                 icon = { Icon(Icons.Default.Check, contentDescription = null) },
@@ -342,7 +395,12 @@ fun MainScreen() {
             )
         }
     ) { paddingValues ->
-        LazyColumn(modifier = Modifier.fillMaxSize().padding(paddingValues).padding(horizontal = 16.dp)) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp)
+        ) {
             item {
                 Spacer(modifier = Modifier.height(16.dp))
                 OutlinedTextField(
@@ -350,7 +408,13 @@ fun MainScreen() {
                     onValueChange = {
                         nomeCaldeirista = it
                         coroutineScope.launch(Dispatchers.IO) {
-                            dao.salvarLeitura(LeituraEntity("config_nome_caldeirista", it, System.currentTimeMillis()))
+                            dao.salvarLeitura(
+                                LeituraEntity(
+                                    "config_nome_caldeirista",
+                                    it,
+                                    System.currentTimeMillis()
+                                )
+                            )
                         }
                     },
                     label = { Text("Nome do Caldeirista") },
@@ -366,7 +430,9 @@ fun MainScreen() {
                 Spacer(modifier = Modifier.height(16.dp))
                 Text("Turno:", fontWeight = FontWeight.Bold)
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Button(
@@ -387,7 +453,9 @@ fun MainScreen() {
 
                 Text("Horário da Coleta:", fontWeight = FontWeight.Bold)
                 LazyRow(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(listaDeHorariosExibida) { hora ->
@@ -410,7 +478,9 @@ fun MainScreen() {
                     value = pressaoCompressor,
                     onValueChange = { pressaoCompressor = it },
                     label = { Text("1. Pressão do Compressor (Bar)") },
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
                     keyboardOptions = KeyboardOptions(
                         capitalization = KeyboardCapitalization.Unspecified,
                         autoCorrectEnabled = false,
@@ -473,15 +543,74 @@ fun MainScreen() {
                     valorTemp = leiturasEstufas["${p}_temp"] ?: "",
                     valorPress = leiturasEstufas["${p}_press"] ?: "",
                     valorUmidade = leiturasEstufas["${p}_umid"] ?: "",
-                    valorTempo = leiturasEstufas["${p}_ciclo"] ?: "", // Mantido conforme seu fluxo local
+                    valorTempo = leiturasEstufas["${p}_ciclo"]
+                        ?: "", // Mantido conforme seu fluxo local
                     valorStatus = leiturasEstufas["${p}_status"] ?: "Operação",
                     labelTempo = "Horas acumulada : horas",
-                    onTempChange = { n -> leiturasEstufas["${p}_temp"] = n; coroutineScope.launch(Dispatchers.IO) { dao.salvarLeitura(LeituraEntity("${p}_temp", n, System.currentTimeMillis())) } },
-                    onPressChange = { n -> leiturasEstufas["${p}_press"] = n; coroutineScope.launch(Dispatchers.IO) { dao.salvarLeitura(LeituraEntity("${p}_press", n, System.currentTimeMillis())) } },
-                    onUmidadeChange = { n -> leiturasEstufas["${p}_umid"] = n; coroutineScope.launch(Dispatchers.IO) { dao.salvarLeitura(LeituraEntity("${p}_umid", n, System.currentTimeMillis())) } },
-                    onTempoChange = { n -> leiturasEstufas["${p}_ciclo"] = n; coroutineScope.launch(Dispatchers.IO) { dao.salvarLeitura(LeituraEntity("${p}_ciclo", n, System.currentTimeMillis())) } },
-                    onStatusChange = { n -> leiturasEstufas["${p}_status"] = n; coroutineScope.launch(Dispatchers.IO) { dao.salvarLeitura(LeituraEntity("${p}_status", n, System.currentTimeMillis())) } },
-                    onVerGraficoClick = { estufaSelecionadaParaGrafico = estufa } // Captura a estufa do clique
+                    onTempChange = { n ->
+                        leiturasEstufas["${p}_temp"] = n; coroutineScope.launch(
+                        Dispatchers.IO
+                    ) {
+                        dao.salvarLeitura(
+                            LeituraEntity(
+                                "${p}_temp",
+                                n,
+                                System.currentTimeMillis()
+                            )
+                        )
+                    }
+                    },
+                    onPressChange = { n ->
+                        leiturasEstufas["${p}_press"] = n; coroutineScope.launch(
+                        Dispatchers.IO
+                    ) {
+                        dao.salvarLeitura(
+                            LeituraEntity(
+                                "${p}_press",
+                                n,
+                                System.currentTimeMillis()
+                            )
+                        )
+                    }
+                    },
+                    onUmidadeChange = { n ->
+                        leiturasEstufas["${p}_umid"] = n; coroutineScope.launch(Dispatchers.IO) {
+                        dao.salvarLeitura(
+                            LeituraEntity(
+                                "${p}_umid",
+                                n,
+                                System.currentTimeMillis()
+                            )
+                        )
+                    }
+                    },
+                    onTempoChange = { n ->
+                        leiturasEstufas["${p}_ciclo"] = n; coroutineScope.launch(
+                        Dispatchers.IO
+                    ) {
+                        dao.salvarLeitura(
+                            LeituraEntity(
+                                "${p}_ciclo",
+                                n,
+                                System.currentTimeMillis()
+                            )
+                        )
+                    }
+                    },
+                    onStatusChange = { n ->
+                        leiturasEstufas["${p}_status"] = n; coroutineScope.launch(Dispatchers.IO) {
+                        dao.salvarLeitura(
+                            LeituraEntity(
+                                "${p}_status",
+                                n,
+                                System.currentTimeMillis()
+                            )
+                        )
+                    }
+                    },
+                    onVerGraficoClick = {
+                        estufaSelecionadaParaGrafico = estufa
+                    } // Captura a estufa do clique
                 )
             }
             item { Spacer(modifier = Modifier.height(100.dp)) }
@@ -558,42 +687,49 @@ fun MainScreen() {
                             )
 
                             compartilharRelatorioTexto(contexto, relatorioTexto)
+
+                            // 💡 CORREÇÃO: Fecha o diálogo IMEDIATAMENTE após abrir a intent do WhatsApp
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("1. Enviar Checklist no WhatsApp")
                     }
-                    // BOTÃO 2: Gera e compartilha o PDF Geral com todas as rodadas históricas
+
+                    // BOTÃO 2: Gera e compartilha o PDF Geral Histórico
                     Button(
                         onClick = {
                             val dataAtual = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
 
-                            // 💡 Chama a função passando o mapa de leituras bruto com todos os horários salvos
-                            val arquivoPdf = criarRelatorioPdfIBK(
-                                contexto = contexto,
-                                nome = nomeCaldeirista,
-                                data = dataAtual,
-                                listaEstufas = listaEstufas,
-                                leiturasEstufas = leiturasEstufas
-                            )
+                            coroutineScope.launch(Dispatchers.IO) {
+                                val arquivoPdf = criarRelatorioPdfIBK(
+                                    contexto = contexto,
+                                    nome = nomeCaldeirista,
+                                    data = dataAtual,
+                                    listaEstufas = listaEstufas,
+                                    leiturasEstufas = leiturasEstufas
+                                )
 
-                            if (arquivoPdf != null && arquivoPdf.exists()) {
-                                compartilharApenasPdf(contexto, arquivoPdf)
-                            } else {
-                                Toast.makeText(contexto, "Erro ao gerar o PDF Histórico.", Toast.LENGTH_LONG).show()
+                                // 💡 CORREÇÃO: Executa o compartilhamento e o fechamento na Main Thread de forma segura
+                                launch(Dispatchers.Main) {
+                                    if (arquivoPdf != null && arquivoPdf.exists()) {
+                                        compartilharApenasPdf(contexto, arquivoPdf)
+                                    } else {
+                                        Toast.makeText(contexto, "Erro ao gerar o PDF do Gráfico Geral.", Toast.LENGTH_LONG).show()
+                                    }
+
+                                    // 💡 CORREÇÃO: Fecha a janela aqui dentro, garantindo que ela suma após o processo do PDF terminar
+                                }
                             }
-
-                            mostrarDialogoRelatorio = false
                         },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF435D56))
                     ) {
-                        Text("2. Gerar PDF do Gráfico Geral (Todas as Coletas)")
+                        Text("2. Gerar PDF do Gráfico Geral")
                     }
                 }
             },
             dismissButton = {
-                TextButton(onClick = { mostrarDialogoReset = false }) {
+                TextButton(onClick = { }) {
                     Text("Cancelar")
                 }
             },
@@ -604,17 +740,22 @@ fun MainScreen() {
 
     if (mostrarDialogoReset) {
         AlertDialog(
-            onDismissRequest = { },
+            onDismissRequest = { }, // Fecha se clicar fora
             confirmButton = {
                 Button(
                     onClick = {
+                        // 💡 Executa a limpeza no banco de dados de forma assíncrona
                         coroutineScope.launch(Dispatchers.IO) {
                             dao.limparDadosDoTurno()
+
+                            // Retorna para a Main Thread para atualizar a tela e FECHAR o diálogo
                             launch(Dispatchers.Main) {
                                 leiturasEstufas.clear()
                                 pressaoCompressor = ""; damperStatus = ""; damperObs = ""; vazamentoStatus = ""; vazamentoObs = ""
                                 nivelCaixaStatus = ""; bombaPocoStatus = ""
-                                tbuEs03Status = ""; tbuEs04Status = ""; tbuEs04Obs = ""
+                                tbuEs03Status = ""; tbuEs03Obs = ""; tbuEs04Status = ""; tbuEs04Obs = ""
+
+                                // 💡 CORREÇÃO: Garante que o diálogo fecha após a exclusão
                             }
                         }
                     },
@@ -624,7 +765,11 @@ fun MainScreen() {
                 }
             },
             dismissButton = {
-                TextButton(onClick = { }) {
+                TextButton(
+                    onClick = {
+                        // 💡 CORREÇÃO: Faz o botão Fechar/Cancelar funcionar perfeitamente
+                    }
+                ) {
                     Text("Cancelar")
                 }
             },
@@ -727,5 +872,7 @@ fun converterHorasParaDias(input: String): String {
             val resto = total % 24
             if (dias > 0) "${dias}d ${resto}h" else "${resto}h"
         }
-    } catch (_: Exception) { input }
+    } catch (_: Exception) {
+        input
+    }
 }

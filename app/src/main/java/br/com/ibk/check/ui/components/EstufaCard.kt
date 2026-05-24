@@ -33,7 +33,7 @@ fun EstufaCard(
     // 💡 Recupera a cor de fundo dinamicamente baseada no status da estufa
     val corFundoCard = when (valorStatus) {
         "Manutenção" -> Color(0xFFFEEBEE) // Vermelho bem claro/suave para manutenção
-        "Troca" -> Color(0xFFE8F5E9)       // Verde claro para troca de lote
+        "Troca" -> Color(0xFFE8F5E9)       // Verde-claro para troca de lote
         else -> CardDefaults.cardColors().containerColor // Segue o padrão do sistema (Light/Dark Mode)
     }
 
