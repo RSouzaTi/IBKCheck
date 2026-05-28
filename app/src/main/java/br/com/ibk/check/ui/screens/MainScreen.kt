@@ -180,17 +180,19 @@ fun MainScreen() {
         paint.color = android.graphics.Color.LTGRAY
         canvas.drawLine(40f, 135f, 802f, 135f, paint)
 
-        // 💡 3. RECALIBRAÇÃO DE COORDENADAS PARA CABER AS 14 ESTUFAS COMPLETA
-        val xInicio = 50f                // Recuado ligeiramente para a esquerda para abrir espaço
+        // 💡 3. COORDENADAS CONFIGURADAS PARA MODELO DE LINHAS CONTÍNUAS
+        val xInicio = 50f
         val yBaseGrafico = 480f
         val alturaMaximaGrafico = 240f
-        val listaHorarios = listOf("06:30", "08:30", "10:30", "12:30", "14:30", "16:30")
+        val listaHorarios = listOf(
+            "06:30", "08:30", "10:30", "12:30", "14:30", "16:30",
+            "18:30", "20:30", "22:30", "00:30", "02:30", "04:30"
+        )
 
-        val larguraBarraIndividual = 4.5f // Ajuste fino milimétrico na espessura
-        val espacoEntreHorarios = 0.8f    // Compactado sutilmente para não estourar
-        val espacoEntreEstufas = 11f      // Espaço entre blocos reduzido para caber de 1 a 14
+        val espacoHorarioLinha = 3.6f  // Ajustado para caber 12 horários por estufa
+        val espacoEntreEstufas = 12f   // Distância de segurança entre os blocos das 14 estufas
 
-        // 4. IMPLEMENTAÇÃO DA GRADE DE FUNDO (LINHAS GUIA HORIZONTAIS)
+        // 4. GRADE DE FUNDO (LINHAS GUIA HORIZONTAIS)
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = 0.5f
         paint.isFakeBoldText = false
@@ -207,83 +209,97 @@ fun MainScreen() {
             canvas.drawText("$pct%", 18f, yGrade + 3f, paint)
         }
 
-        // Restaura o estilo de preenchimento para as barras
-        paint.style = Paint.Style.FILL
-
-        // 5. DESENHO DAS BARRAS
+        // 5. DESENHO DO GRÁFICO DE LINHAS (TENDÊNCIA/EVOLUÇÃO)
         listaEstufas.forEachIndexed { indiceEstufa, estufa ->
-            val larguraBlocoEstufa =
-                (larguraBarraIndividual + espacoEntreHorarios) * listaHorarios.size
+            val larguraBlocoEstufa = espacoHorarioLinha * listaHorarios.size
             val xBlocoInicio = xInicio + indiceEstufa * (larguraBlocoEstufa + espacoEntreEstufas)
 
+            // Variáveis de controle para ligar as coordenadas [Ponto Anterior] -> [Ponto Atual]
+            var xAnterior = -1f
+            var yAnterior = -1f
+
             listaHorarios.forEachIndexed { indiceHorario, horario ->
-                val prefix = "${estufa.id}_$horario"
+
+                // 🛠️ ASSEGURE-SE QUE estufa.id SEJA EXATAMENTE O VALOR DA VARIÁVEL 'p' DO CARD
+                // Se no card você usou estufa.idEstufa, mude aqui para: "${estufa.idEstufa}_${horario}"
+                val prefix = "${estufa.id}_${horario}"
+
                 val status = leiturasEstufas["${prefix}_status"] ?: "Operação"
-                val xBarra =
-                    xBlocoInicio + indiceHorario * (larguraBarraIndividual + espacoEntreHorarios)
+                val xPonto = xBlocoInicio + (indiceHorario * espacoHorarioLinha)
 
                 if (status == "Operação") {
                     val umidadeTexto = leiturasEstufas["${prefix}_umid"] ?: ""
                     val apenasNumeros = umidadeTexto.replace(",", ".")
                     val umidade = apenasNumeros.toFloatOrNull() ?: 0f
 
-                    // Substitua o trecho interno do seu loop de umidade por este estruturado sem quebra de chaves:
-                    if (umidade > 0f) {
-                        val alturaBarra = (umidade / 100f) * alturaMaximaGrafico
-                        val yBarraTop = yBaseGrafico - alturaBarra
 
-                        val corBarra = when {
-                            umidade <= 15f -> "#435D56"
-                            umidade <= 25f -> "#FBC02D"
-                            else -> "#D32F2F"
+                    if (umidade > 0f) {
+                        val alturaLinha = (umidade / 100f) * alturaMaximaGrafico
+                        val yPonto = yBaseGrafico - alturaLinha
+
+                        // Define dinamicamente a cor da linha condicional
+                        val corStatus = when {
+                            umidade <= 15f -> "#435D56" // Ideal (Verde)
+                            umidade <= 25f -> "#FBC02D" // Atenção (Amarelo)
+                            else -> "#D32F2F"           // Crítico (Vermelho)
                         }
 
-                        paint.color = corBarra.toColorInt()
-                        canvas.drawRect(xBarra, yBarraTop, xBarra + larguraBarraIndividual, yBaseGrafico, paint)
+                        // 1. Conecta o ponto atual ao anterior (se houver uma sequência válida)
+                        if (xAnterior != -1f && yAnterior != -1f) {
+                            paint.color = corStatus.toColorInt()
+                            paint.strokeWidth = 1.8f
+                            paint.style = Paint.Style.STROKE
+                            canvas.drawLine(xAnterior, yAnterior, xPonto, yPonto, paint)
+                        }
 
-                        // Mostra o valor numérico acima da barra no fechamento ou em picos críticos
-                        // Altere a condição para mostrar o texto em qualquer medição válida registrada
+                        // 2. Desenha o Círculo (Nó indicador) na junção do horário
+                        paint.style = Paint.Style.FILL
+                        paint.color = corStatus.toColorInt()
+                        canvas.drawCircle(xPonto, yPonto, 2.5f, paint)
+
+                        // 3. Lógica de Escadinha para todas as etiquetas numéricas (>0%)
                         paint.color = android.graphics.Color.DKGRAY
                         paint.textSize = 7f
                         paint.isFakeBoldText = true
 
-                        // 1. Lógica de Escadinha: Horários ímpares na lista sobem mais que os pares
                         val seAlternado = (indiceHorario % 2 != 0)
                         val deslocamentoVertical = if (seAlternado) 18f else 5f
-                        val yTexto = yBarraTop - deslocamentoVertical
+                        val yTexto = yPonto - deslocamentoVertical
 
-                        // 2. Linha de chamada vertical sutil para guiar o olhar no texto que subiu
+                        // 4. Linha de chamada vertical sutil (Cinza Clara)
                         if (seAlternado) {
                             paint.color = "#CCCCCC".toColorInt()
                             paint.strokeWidth = 0.5f
                             paint.style = Paint.Style.STROKE
 
-                            canvas.drawLine(
-                                xBarra + (larguraBarraIndividual / 2),
-                                yBarraTop,
-                                xBarra + (larguraBarraIndividual / 2),
-                                yTexto + 2f,
-                                paint
-                            )
+                            canvas.drawLine(xPonto, yPonto, xPonto, yTexto + 2f, paint)
 
                             paint.style = Paint.Style.FILL
                             paint.color = android.graphics.Color.DKGRAY
                         }
 
-                        // 3. Desenha o texto da porcentagem perfeitamente espaçado
-                        canvas.drawText(
-                            "${umidade.toInt()}%",
-                            xBarra - 1f,
-                            yTexto,
-                            paint
-                        )
+                        // Desenha o número da umidade centralizado em relação ao nó
+                        canvas.drawText("${umidade.toInt()}%", xPonto - 5f, yTexto, paint)
+
+                        // Atualiza referências para a próxima linha temporal
+                        xAnterior = xPonto
+                        yAnterior = yPonto
+                    } else {
+                        // Sem medição rompe a linha contínua
+                        xAnterior = -1f
+                        yAnterior = -1f
                     }
+                } else {
+                    // Estufa desligada rompe a linha contínua
+                    xAnterior = -1f
+                    yAnterior = -1f
                 }
             }
 
-            // LINHA DIVISÓRIA VERTICAL SUAVE
+            // LINHA DIVISÓRIA VERTICAL SUAVE ENTRE BLOCOS DE ESTUFAS
             paint.color = "#F0F0F0".toColorInt()
             paint.strokeWidth = 1f
+            paint.style = Paint.Style.STROKE
             val xDivisoria = xBlocoInicio + larguraBlocoEstufa + (espacoEntreEstufas / 2)
             if (indiceEstufa < listaEstufas.size - 1) {
                 canvas.drawLine(
@@ -295,20 +311,23 @@ fun MainScreen() {
                 )
             }
 
-            // Nome da Estufa Corrigido (Se o nome for longo como "Estufa 01", reduz para "ES01")
+            // Nome da Estufa Identificado (ES01, ES02...) abaixo do eixo horizontal
             paint.color = android.graphics.Color.BLACK
+            paint.style = Paint.Style.FILL
             paint.textSize = 8.5f
             paint.isFakeBoldText = true
             val nomeCurto = estufa.nome.replace("Estufa ", "ES")
-            canvas.drawText(nomeCurto, xBlocoInicio + 2f, yBaseGrafico + 18f, paint)
+            canvas.drawText(nomeCurto, xBlocoInicio - 2f, yBaseGrafico + 18f, paint)
         }
 
-        // Desenha a linha firme do chão do gráfico (Eixo X)
+        // Linha firme do chão do gráfico (Eixo X)
         paint.color = android.graphics.Color.GRAY
         paint.strokeWidth = 2f
+        paint.style = Paint.Style.STROKE
         canvas.drawLine(40f, yBaseGrafico, 802f, yBaseGrafico, paint)
 
         // 6. LEGENDA DE STATUS DE COR E HORÁRIOS
+        paint.style = Paint.Style.FILL
         var xLegenda = 40f
         paint.textSize = 9f
         paint.isFakeBoldText = true
@@ -337,7 +356,7 @@ fun MainScreen() {
         paint.textSize = 8.5f
         paint.isFakeBoldText = true
         canvas.drawText(
-            "Ordem Cronológica das Barras (Esquerda para Direita):  06:30  ➔  08:30  ➔  10:30  ➔  12:30  ➔  14:30  ➔  16:30",
+            "Ordem Cronológica (1º e 2º Turnos):  06:30  ➔  ...  ➔  16:30  |  18:30  ➔  ...  ➔  04:30",
             40f,
             550f,
             paint
@@ -543,74 +562,51 @@ fun MainScreen() {
                     valorTemp = leiturasEstufas["${p}_temp"] ?: "",
                     valorPress = leiturasEstufas["${p}_press"] ?: "",
                     valorUmidade = leiturasEstufas["${p}_umid"] ?: "",
-                    valorTempo = leiturasEstufas["${p}_ciclo"]
-                        ?: "", // Mantido conforme seu fluxo local
+                    valorTempo = leiturasEstufas["${p}_ciclo"] ?: "",
                     valorStatus = leiturasEstufas["${p}_status"] ?: "Operação",
                     labelTempo = "Horas acumulada : horas",
+
                     onTempChange = { n ->
-                        leiturasEstufas["${p}_temp"] = n; coroutineScope.launch(
-                        Dispatchers.IO
-                    ) {
-                        dao.salvarLeitura(
-                            LeituraEntity(
-                                "${p}_temp",
-                                n,
-                                System.currentTimeMillis()
-                            )
-                        )
-                    }
+                        val chaveCompleta = "${p}_temp"
+                        leiturasEstufas.put(chaveCompleta, n)
+                        coroutineScope.launch(Dispatchers.IO) {
+                            dao.salvarLeitura(LeituraEntity(chaveCompleta, n, System.currentTimeMillis()))
+                        }
                     },
                     onPressChange = { n ->
-                        leiturasEstufas["${p}_press"] = n; coroutineScope.launch(
-                        Dispatchers.IO
-                    ) {
-                        dao.salvarLeitura(
-                            LeituraEntity(
-                                "${p}_press",
-                                n,
-                                System.currentTimeMillis()
-                            )
-                        )
-                    }
+                        val chaveCompleta = "${p}_press"
+                        leiturasEstufas.put(chaveCompleta, n)
+                        coroutineScope.launch(Dispatchers.IO) {
+                            dao.salvarLeitura(LeituraEntity(chaveCompleta, n, System.currentTimeMillis()))
+                        }
                     },
                     onUmidadeChange = { n ->
-                        leiturasEstufas["${p}_umid"] = n; coroutineScope.launch(Dispatchers.IO) {
-                        dao.salvarLeitura(
-                            LeituraEntity(
-                                "${p}_umid",
-                                n,
-                                System.currentTimeMillis()
-                            )
-                        )
-                    }
+                        val chaveCompleta = "${p}_umid"
+                        leiturasEstufas.put(chaveCompleta, n)
+
+                        coroutineScope.launch(Dispatchers.IO) {
+                            dao.salvarLeitura(LeituraEntity(chaveCompleta, n, System.currentTimeMillis()))
+                        }
                     },
                     onTempoChange = { n ->
-                        leiturasEstufas["${p}_ciclo"] = n; coroutineScope.launch(
-                        Dispatchers.IO
-                    ) {
-                        dao.salvarLeitura(
-                            LeituraEntity(
-                                "${p}_ciclo",
-                                n,
-                                System.currentTimeMillis()
-                            )
-                        )
-                    }
+                        val chaveCompleta = "${p}_ciclo"
+                        leiturasEstufas.put(chaveCompleta, n)
+
+                        coroutineScope.launch(Dispatchers.IO) {
+                            dao.salvarLeitura(LeituraEntity(chaveCompleta, n, System.currentTimeMillis()))
+                        }
                     },
                     onStatusChange = { n ->
-                        leiturasEstufas["${p}_status"] = n; coroutineScope.launch(Dispatchers.IO) {
-                        dao.salvarLeitura(
-                            LeituraEntity(
-                                "${p}_status",
-                                n,
-                                System.currentTimeMillis()
-                            )
-                        )
-                    }
+                        val chaveCompleta = "${p}_status"
+                        leiturasEstufas.put(chaveCompleta, n)
+
+                        coroutineScope.launch(Dispatchers.IO) {
+                            dao.salvarLeitura(LeituraEntity(chaveCompleta, n, System.currentTimeMillis()))
+                        }
                     },
                     onVerGraficoClick = {
                         estufaSelecionadaParaGrafico = estufa
-                    } // Captura a estufa do clique
+                    }
                 )
             }
             item { Spacer(modifier = Modifier.height(100.dp)) }
@@ -668,15 +664,14 @@ fun MainScreen() {
     // --- DIÁLOGOS DE ENVIO DE RELATÓRIO E RESET ---
     if (mostrarDialogoRelatorio) {
         AlertDialog(
-            onDismissRequest = { },
+            onDismissRequest = { mostrarDialogoRelatorio = false }, // Fecha ao clicar fora
             confirmButton = {
                 Column(
                     modifier = Modifier.padding(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // BOTÃO 1: Envia apenas o texto para o WhatsApp
                     Button(
-                        onClick = {
+                        onClick = @Suppress("UNUSED_VALUE") {
                             val dataAtual = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
                             val relatorioTexto = gerarTextoRelatorioFinal(
                                 nome = nomeCaldeirista, data = dataAtual, pressaoComp = pressaoCompressor,
@@ -687,15 +682,13 @@ fun MainScreen() {
                             )
 
                             compartilharRelatorioTexto(contexto, relatorioTexto)
-
-                            // 💡 CORREÇÃO: Fecha o diálogo IMEDIATAMENTE após abrir a intent do WhatsApp
+                            mostrarDialogoRelatorio = false // Fecha a janela após mandar para o WhatsApp
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("1. Enviar Checklist no WhatsApp")
                     }
 
-                    // BOTÃO 2: Gera e compartilha o PDF Geral Histórico
                     Button(
                         onClick = {
                             val dataAtual = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
@@ -709,15 +702,13 @@ fun MainScreen() {
                                     leiturasEstufas = leiturasEstufas
                                 )
 
-                                // 💡 CORREÇÃO: Executa o compartilhamento e o fechamento na Main Thread de forma segura
                                 launch(Dispatchers.Main) {
                                     if (arquivoPdf != null && arquivoPdf.exists()) {
                                         compartilharApenasPdf(contexto, arquivoPdf)
                                     } else {
                                         Toast.makeText(contexto, "Erro ao gerar o PDF do Gráfico Geral.", Toast.LENGTH_LONG).show()
                                     }
-
-                                    // 💡 CORREÇÃO: Fecha a janela aqui dentro, garantindo que ela suma após o processo do PDF terminar
+                                    mostrarDialogoRelatorio = false // Fecha a janela após gerar o PDF
                                 }
                             }
                         },
@@ -729,7 +720,7 @@ fun MainScreen() {
                 }
             },
             dismissButton = {
-                TextButton(onClick = { }) {
+                TextButton(onClick = { mostrarDialogoRelatorio = false }) { // Fecha ao clicar em Cancelar
                     Text("Cancelar")
                 }
             },
@@ -740,41 +731,42 @@ fun MainScreen() {
 
     if (mostrarDialogoReset) {
         AlertDialog(
-            onDismissRequest = { }, // Fecha se clicar fora
+            onDismissRequest = { mostrarDialogoReset = false }, // Fecha ao clicar fora
             confirmButton = {
                 Button(
                     onClick = {
-                        // 💡 Executa a limpeza no banco de dados de forma assíncrona
                         coroutineScope.launch(Dispatchers.IO) {
                             dao.limparDadosDoTurno()
 
-                            // Retorna para a Main Thread para atualizar a tela e FECHAR o diálogo
                             launch(Dispatchers.Main) {
                                 leiturasEstufas.clear()
-                                pressaoCompressor = ""; damperStatus = ""; damperObs = ""; vazamentoStatus = ""; vazamentoObs = ""
-                                nivelCaixaStatus = ""; bombaPocoStatus = ""
-                                tbuEs03Status = ""; tbuEs03Obs = ""; tbuEs04Status = ""; tbuEs04Obs = ""
-
-                                // 💡 CORREÇÃO: Garante que o diálogo fecha após a exclusão
+                                pressaoCompressor = ""
+                                damperStatus = ""
+                                damperObs = ""
+                                vazamentoStatus = ""
+                                vazamentoObs = ""
+                                nivelCaixaStatus = ""
+                                bombaPocoStatus = ""
+                                tbuEs03Status = ""
+                                tbuEs03Obs = ""
+                                tbuEs04Status = ""
+                                tbuEs04Obs = ""
+                                mostrarDialogoReset = false // Fecha após excluir
                             }
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
                 ) {
-                    Text("Limpar", color = Color.White)
+                    Text("Limpar Tudo", color = Color.White)
                 }
             },
             dismissButton = {
-                TextButton(
-                    onClick = {
-                        // 💡 CORREÇÃO: Faz o botão Fechar/Cancelar funcionar perfeitamente
-                    }
-                ) {
+                TextButton(onClick = { mostrarDialogoReset = false }) { // Fecha ao clicar em Cancelar
                     Text("Cancelar")
                 }
             },
-            title = { Text("Resetar Tudo") },
-            text = { Text("Isso apagará todas as medições do turno.") }
+            title = { Text("Resetar Turno") },
+            text = { Text("Tem certeza que deseja limpar todos os dados registrados localmente neste turno? Esta ação não pode ser desfeita.") }
         )
     }
 } // FIM DA MAINSCREEN
