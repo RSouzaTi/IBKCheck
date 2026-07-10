@@ -237,51 +237,90 @@ fun MainScreen() {
                         val alturaLinha = (umidade / 100f) * alturaMaximaGrafico
                         val yPonto = yBaseGrafico - alturaLinha
 
-                        // Define dinamicamente a cor da linha condicional
+                        // Define a cor com base na gravidade
                         val corStatus = when {
-                            umidade <= 15f -> "#435D56" // Ideal (Verde)
-                            umidade <= 25f -> "#FBC02D" // Atenção (Amarelo)
-                            else -> "#D32F2F"           // Crítico (Vermelho)
+                            umidade <= 15f -> "#435D56"
+                            umidade <= 25f -> "#FBC02D"
+                            else -> "#D32F2F"
                         }
 
-                        // 1. Conecta o ponto atual ao anterior (se houver uma sequência válida)
+                        // [O desenho da linha e do círculo permanecem iguais...]
                         if (xAnterior != -1f && yAnterior != -1f) {
                             paint.color = corStatus.toColorInt()
                             paint.strokeWidth = 1.8f
                             paint.style = Paint.Style.STROKE
                             canvas.drawLine(xAnterior, yAnterior, xPonto, yPonto, paint)
                         }
-
-                        // 2. Desenha o Círculo (Nó indicador) na junção do horário
                         paint.style = Paint.Style.FILL
                         paint.color = corStatus.toColorInt()
                         canvas.drawCircle(xPonto, yPonto, 2.5f, paint)
 
-                        // 3. Lógica de Escadinha para todas as etiquetas numéricas (>0%)
+
+                        // 🛠️ NOVA LOGICA DE ESCADINHA EM 4 NÍVEIS PARA 12 HORÁRIOS
                         paint.color = android.graphics.Color.DKGRAY
-                        paint.textSize = 7f
+                        paint.textSize = 6.5f // Reduzido sutilmente de 7f para 6.5f para ajudar no espaço
                         paint.isFakeBoldText = true
 
-                        val seAlternado = (indiceHorario % 2 != 0)
-                        val deslocamentoVertical = if (seAlternado) 18f else 5f
+                        // Distribui os textos em 4 alturas diferentes consecutivas para não sobrepor
+                        val deslocamentoVertical = when (indiceHorario % 4) {
+                            0 -> 6f   // Bem perto do ponto
+                            1 -> 15f  // Médio baixo
+                            2 -> 24f  // Médio alto
+                            else -> 33f // Bem alto
+                        }
                         val yTexto = yPonto - deslocamentoVertical
 
-                        // 4. Linha de chamada vertical sutil (Cinza Clara)
-                        if (seAlternado) {
-                            paint.color = "#CCCCCC".toColorInt()
-                            paint.strokeWidth = 0.5f
-                            paint.style = Paint.Style.STROKE
+                        // Ajuste fino no X para centralizar melhor os numerozinhos pequenos
+                        val xTextoAjustado = xPonto - 4.5f
 
+                        // Desenha uma linha de chamada vertical sutil apenas para os níveis mais altos (1, 2 e 3)
+                        if (indiceHorario % 4 != 0) {
+                            paint.color = "#DCDCDC".toColorInt() // Cinza bem suave para não poluir
+                            paint.strokeWidth = 0.4f
+                            paint.style = Paint.Style.STROKE
                             canvas.drawLine(xPonto, yPonto, xPonto, yTexto + 2f, paint)
 
                             paint.style = Paint.Style.FILL
                             paint.color = android.graphics.Color.DKGRAY
                         }
 
-                        // Desenha o número da umidade centralizado em relação ao nó
-                        canvas.drawText("${umidade.toInt()}%", xPonto - 5f, yTexto, paint)
+                        // Desenha o texto da porcentagem sem perigo de colisão
+                        canvas.drawText("${umidade.toInt()}%", xTextoAjustado, yTexto, paint)
 
-                        // Atualiza referências para a próxima linha temporal
+                        // 🛠️ INDICADOR DE TENDÊNCIA (SETA OU IGUAL)
+                        if (indiceHorario > 0) { // Só compara a partir do segundo horário do gráfico
+                            val horarioAnterior = listaHorarios[indiceHorario - 1]
+                            val prefixAnterior = "${estufa.id}_$horarioAnterior"
+
+                            val umidadeAnteriorTexto = leiturasEstufas["${prefixAnterior}_umid"] ?: ""
+                            val apenasNumerosAnterior = umidadeAnteriorTexto.replace(",", ".")
+                            val umidadeAnterior = apenasNumerosAnterior.toFloatOrNull() ?: 0f
+
+                            // Só realiza a análise se o horário anterior contiver uma medição válida
+                            if (umidadeAnterior > 0f) {
+                                paint.textSize = 7.5f // Tamanho ideal para alinhar com o texto da umidade
+                                paint.isFakeBoldText = true
+
+                                val xSeta = xTextoAjustado + 13f // Afastamento horizontal seguro para não grudar no %
+
+                                when {
+                                    umidade > umidadeAnterior -> {
+                                        paint.color = "#2E7D32".toColorInt() // Verde Escuro
+                                        canvas.drawText("▲", xSeta, yTexto, paint)
+                                    }
+                                    umidade < umidadeAnterior -> {
+                                        paint.color = "#1565C0".toColorInt() // Azul Processo
+                                        canvas.drawText("▼", xSeta, yTexto, paint)
+                                    }
+                                    else -> {
+                                        paint.color = android.graphics.Color.GRAY // Cinza Estável
+                                        canvas.drawText("=", xSeta, yTexto, paint)
+                                    }
+                                }
+                            }
+                        }
+
+                        // Atualiza as referências para o próximo ponto
                         xAnterior = xPonto
                         yAnterior = yPonto
                     } else {
@@ -568,21 +607,21 @@ fun MainScreen() {
 
                     onTempChange = { n ->
                         val chaveCompleta = "${p}_temp"
-                        leiturasEstufas.put(chaveCompleta, n)
+                        leiturasEstufas[chaveCompleta] = n
                         coroutineScope.launch(Dispatchers.IO) {
                             dao.salvarLeitura(LeituraEntity(chaveCompleta, n, System.currentTimeMillis()))
                         }
                     },
                     onPressChange = { n ->
                         val chaveCompleta = "${p}_press"
-                        leiturasEstufas.put(chaveCompleta, n)
+                        leiturasEstufas[chaveCompleta] = n
                         coroutineScope.launch(Dispatchers.IO) {
                             dao.salvarLeitura(LeituraEntity(chaveCompleta, n, System.currentTimeMillis()))
                         }
                     },
                     onUmidadeChange = { n ->
                         val chaveCompleta = "${p}_umid"
-                        leiturasEstufas.put(chaveCompleta, n)
+                        leiturasEstufas[chaveCompleta] = n
 
                         coroutineScope.launch(Dispatchers.IO) {
                             dao.salvarLeitura(LeituraEntity(chaveCompleta, n, System.currentTimeMillis()))
@@ -590,7 +629,7 @@ fun MainScreen() {
                     },
                     onTempoChange = { n ->
                         val chaveCompleta = "${p}_ciclo"
-                        leiturasEstufas.put(chaveCompleta, n)
+                        leiturasEstufas[chaveCompleta] = n
 
                         coroutineScope.launch(Dispatchers.IO) {
                             dao.salvarLeitura(LeituraEntity(chaveCompleta, n, System.currentTimeMillis()))
@@ -598,7 +637,7 @@ fun MainScreen() {
                     },
                     onStatusChange = { n ->
                         val chaveCompleta = "${p}_status"
-                        leiturasEstufas.put(chaveCompleta, n)
+                        leiturasEstufas[chaveCompleta] = n
 
                         coroutineScope.launch(Dispatchers.IO) {
                             dao.salvarLeitura(LeituraEntity(chaveCompleta, n, System.currentTimeMillis()))
