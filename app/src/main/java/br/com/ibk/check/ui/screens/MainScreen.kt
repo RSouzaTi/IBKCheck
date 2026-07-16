@@ -836,6 +836,13 @@ fun gerarTextoRelatorioFinal(
     sb.append("🌡️ *MEDIÇÕES DAS ESTUFAS*\n")
     sb.append("━━━━━━━━━━━━━━━━━━━━\n")
 
+    // Lista ordenada para encontrar o horário anterior ao selecionado
+    val listaHorarios = listOf(
+        "06:30", "08:30", "10:30", "12:30", "14:30", "16:30",
+        "18:30", "20:30", "22:30", "00:30", "02:30", "04:30"
+    )
+    val indiceAtual = listaHorarios.indexOf(horarioSelecionado)
+
     estufas.forEach { estufa ->
         val prefix = "${estufa.id}_$horarioSelecionado"
         val status = leituras["${prefix}_status"] ?: "Operação"
@@ -847,8 +854,28 @@ fun gerarTextoRelatorioFinal(
         if (t.isNotEmpty() || u.isNotEmpty() || status != "Operação") {
             if (status == "Operação") {
                 val tempoFormatado = if (c.isNotEmpty()) converterHorasParaDias(c) else ""
+
+                // 🛠️ LÓGICA DE TENDÊNCIA DE UMIDADE PARA O WHATSAPP
+                var indicadorSeta = ""
+                if (indiceAtual > 0 && u.isNotEmpty()) {
+                    val horarioAnterior = listaHorarios[indiceAtual - 1]
+                    val prefixAnterior = "${estufa.id}_$horarioAnterior"
+
+                    val uAnteriorTexto = leituras["${prefixAnterior}_umid"] ?: ""
+                    val uAnterior = uAnteriorTexto.replace(",", ".").toFloatOrNull() ?: 0f
+                    val uAtual = u.replace(",", ".").toFloatOrNull() ?: 0f
+
+                    if (uAnterior > 0f && uAtual > 0f) {
+                        indicadorSeta = when {
+                            uAtual > uAnterior -> " 🔺" // Subiu
+                            uAtual < uAnterior -> " 🔹" // Desceu (ótimo para secagem)
+                            else -> " ➖"               // Estável
+                        }
+                    }
+                }
+
                 sb.append("🏗️ *${estufa.nome}*\n")
-                sb.append("┗ 💧 $u% | 🌡️ $t°C | 💨 $p ${estufa.unidadePressao} | ⏳ $tempoFormatado\n\n")
+                sb.append("┗ 💧 $u%$indicadorSeta | 🌡️ $t°C | 💨 $p ${estufa.unidadePressao} | ⏳ $tempoFormatado\n\n")
             } else {
                 sb.append("🛠️ *${estufa.nome}*: ${status.uppercase()}\n\n")
             }
